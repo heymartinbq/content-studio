@@ -39,9 +39,9 @@ export default function SVGFilters({
         <filter id="video-color-curves">
           <feColorMatrix type="saturate" values={`${videoSaturation}`} />
           <feComponentTransfer>
-            <feFuncR type="gamma" exponent={`${videoGamma * videoGammaR}`} />
-            <feFuncG type="gamma" exponent={`${videoGamma * videoGammaG}`} />
-            <feFuncB type="gamma" exponent={`${videoGamma * videoGammaB}`} />
+            <feFuncR type="gamma" exponent={`${videoGammaR}`} />
+            <feFuncG type="gamma" exponent={`${videoGammaG}`} />
+            <feFuncB type="gamma" exponent={`${videoGammaB}`} />
           </feComponentTransfer>
           <feComponentTransfer>
             <feFuncR type="linear" slope={`${videoBrightness}`} intercept={`${(1 - videoContrast) / 2}`} />

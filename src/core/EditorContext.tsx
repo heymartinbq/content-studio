@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { createContext, useContext, useReducer, useEffect, useCallback } from "react";
+import React, { createContext, useContext, useReducer, useEffect, useCallback, useRef } from "react";
 import { 
   EditorState, 
   EditorConfig, 
@@ -12,10 +12,12 @@ import {
   JournalEntry 
 } from "./types";
 import { INITIAL_CONFIG, DEFAULT_LAYER_TEMPLATE } from "./defaults";
+import { getVortexEngine } from "./wasm-bridge";
+import { VortexEngine } from "./pkg/src_rs";
 
 const INITIAL_STATE: EditorState = {
   config: INITIAL_CONFIG,
-  activeLayerId: "layer-1",
+  activeLayerId: "media",
   isPreview: false,
   showFloatingEditor: true,
   journal: [],
@@ -74,7 +76,7 @@ function editorReducer(state: EditorState, action: EditorAction): EditorState {
     case "REMOVE_LAYER": {
       if (state.config.layers.length <= 1) return state;
       const newLayers = state.config.layers.filter(l => l.id !== action.payload);
-      const newActiveId = state.activeLayerId === action.payload ? newLayers[0].id : state.activeLayerId;
+      const newActiveId = state.activeLayerId === action.payload ? "media" : state.activeLayerId;
       
       newState = {
         ...state,
@@ -165,6 +167,7 @@ function editorReducer(state: EditorState, action: EditorAction): EditorState {
 const EditorContext = createContext<{
   state: EditorState;
   dispatch: React.Dispatch<EditorAction>;
+  engineReady: boolean;
   actions: {
     updateGlobalConfig: (updates: Partial<EditorConfig>) => void;
     selectLayer: (id: string) => void;
@@ -176,14 +179,47 @@ const EditorContext = createContext<{
     toggleFloatingEditor: (val?: boolean) => void;
     reorderLayers: (layers: Layer[]) => void;
     clearJournal: () => void;
+    calculateGamma: (master: number, channel: number) => number;
   };
 } | null>(null);
 
 export function EditorProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(editorReducer, INITIAL_STATE);
+  const engineRef = useRef<VortexEngine | null>(null);
+  const [engineReady, setEngineReady] = React.useState(false);
+
+  // Inicialización del motor Wasm
+  useEffect(() => {
+    getVortexEngine().then(engine => {
+      engineRef.current = engine;
+      setEngineReady(true);
+    });
+  }, []);
 
   const actions = {
-    updateGlobalConfig: useCallback((payload: any) => dispatch({ type: "UPDATE_GLOBAL_CONFIG", payload }), []),
+    updateGlobalConfig: useCallback((payload: Partial<EditorConfig>) => {
+      // Smart Debounce en Rust para parámetros numéricos de alta frecuencia
+      if (engineRef.current) {
+        let shouldDispatch = true;
+        
+        // Revisar si los cambios numéricos son significativos antes de disparar el Journaling redundante
+        for (const [key, value] of Object.entries(payload)) {
+          if (typeof value === "number") {
+            const isSignificant = engineRef.current.debounce_update(key, value, 0.005);
+            if (!isSignificant) shouldDispatch = false;
+          }
+        }
+
+        if (!shouldDispatch) {
+          // Si no es significativo para el diario, actualizamos el estado sin generarJournaling ruidoso? 
+          // Por simplicidad en este MVP, siempre despachamos para la UI, pero el motor Rust 
+          // ya está filtrando lo interno si quisiéramos.
+        }
+      }
+      
+      dispatch({ type: "UPDATE_GLOBAL_CONFIG", payload });
+    }, []),
+
     selectLayer: useCallback((payload: string) => dispatch({ type: "SELECT_LAYER", payload }), []),
     addLayer: useCallback((payload?: any) => dispatch({ type: "ADD_LAYER", payload }), []),
     removeLayer: useCallback((payload: string) => dispatch({ type: "REMOVE_LAYER", payload }), []),
@@ -193,10 +229,17 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
     toggleFloatingEditor: useCallback((payload?: boolean) => dispatch({ type: "TOGGLE_FLOATING_EDITOR", payload }), []),
     reorderLayers: useCallback((payload: Layer[]) => dispatch({ type: "REORDER_LAYERS", payload }), []),
     clearJournal: useCallback(() => dispatch({ type: "CLEAR_JOURNAL" }), []),
+    
+    calculateGamma: useCallback((master: number, channel: number) => {
+      if (engineRef.current) {
+        return VortexEngine.calculate_gamma(master, channel);
+      }
+      return master * channel;
+    }, [])
   };
 
   return (
-    <EditorContext.Provider value={{ state, dispatch, actions }}>
+    <EditorContext.Provider value={{ state, dispatch, engineReady, actions }}>
       {children}
     </EditorContext.Provider>
   );

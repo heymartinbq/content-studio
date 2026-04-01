@@ -66,10 +66,10 @@ export default function App() {
         videoContrast={config.videoContrast}
         videoSaturation={config.videoSaturation}
         videoHue={config.videoHue}
-        videoGamma={config.videoGamma}
-        videoGammaR={config.videoGammaR}
-        videoGammaG={config.videoGammaG}
-        videoGammaB={config.videoGammaB}
+        videoGamma={actions.calculateGamma(config.videoGamma, 1)}
+        videoGammaR={actions.calculateGamma(config.videoGamma, config.videoGammaR)}
+        videoGammaG={actions.calculateGamma(config.videoGamma, config.videoGammaG)}
+        videoGammaB={actions.calculateGamma(config.videoGamma, config.videoGammaB)}
         immersiveGrain={config.immersiveGrain}
         immersiveScanlines={config.immersiveScanlines}
       />
