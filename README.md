@@ -1,14 +1,15 @@
 # 🎬 Content Studio - Advanced Editorial Overlay System
 
-**Content Studio** is a professional-grade web application designed for real-time video and text compositions. It provides creators with a high-end interface to craft visually stunning overlays, utilizing advanced SVG filters and motion graphics.
+**Content Studio** is a professional-grade web application designed for real-time video and text compositions. It provides creators with a high-end interface to craft visually stunning overlays, utilizing advanced SVG filters, motion graphics, and a sophisticated color grading engine.
 
 ## ✨ Key Features
 
+-   **📽️ Consolidated Core Architecture**: Centralized state management using `useReducer` and `Context API` for full traceability and performance.
+-   **📈 Advanced Color Curvature**: Professional-grade SRGB Gamma correction with independent channel control (Red, Green, Blue) for unified grading of video and webcam.
+-   **🎭 Immersive Film Treatment**: Granular post-processing engine for organic Film Grain and Vintage Scanlines (CRT effect).
+-   **📑 Vertical Navigation Rail**: High-efficiency sidebar with icon-based navigation, smooth tooltips, and a streamlined workspace.
+-   **🧩 Real-time Debugger**: Integrated event journaling and state inspection system (accessible via `Ctrl + Shift + D`).
 -   **🎨 Dynamic Text Overlays**: Advanced typography engine with support for Glow, Glitch, Neon, and Chromatic Aberration effects.
--   **📹 Real-time Video Integration**: Seamlessly blend text overlays with abstract video backgrounds or live webcam feeds.
--   **🎭 Professional SVG Filters**: Sophisticated post-processing stack including Bloom, Noise, Vignette, and sophisticated color grading.
--   **⏱️ Timeline & Layer Management**: Full control over multiple layers with a dedicated properties editor and timeline-like workspace.
--   **📱 Responsive & Fluid UI**: Built with a premium "dark mode" aesthetic, glassmorphism, and smooth micro-animations.
 
 ## 🚀 Getting Started
 
@@ -30,12 +31,7 @@
     npm install
     ```
 
-3.  Configure environment variables:
-    ```bash
-    cp .env.example .env
-    ```
-
-4.  Start the development server:
+3.  Start the development server:
     ```bash
     npm run dev
     ```
@@ -43,6 +39,7 @@
 ## 🛠️ Technology Stack
 
 -   **Core**: [React 19](https://react.dev/), [TypeScript](https://www.typescriptlang.org/)
+-   **State Engine**: Custom Reducer-based Context with automated Journaling
 -   **Build Tool**: [Vite](https://vitejs.dev/)
 -   **Styling**: [Tailwind CSS 4](https://tailwindcss.com/)
 -   **Animations**: [Motion](https://motion.dev/)
@@ -51,3 +48,4 @@
 ## 📄 License
 
 This project is licensed under the Apache-2.0 License. See the [LICENSE](LICENSE) file for details.
+
