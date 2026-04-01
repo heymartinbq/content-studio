@@ -1,0 +1,8 @@
+{
+  "name": "Content Studio Framework",
+  "description": "Generador de cortinas y overlays avanzados con texturas de neón, destellos y filtros SVG para videos.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
