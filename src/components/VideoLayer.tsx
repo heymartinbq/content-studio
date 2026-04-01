@@ -12,7 +12,7 @@ interface VideoLayerProps {
 
 export default function VideoLayer({ videoUrl, opacity, blur, showImmersiveOverlay = false }: VideoLayerProps) {
   return (
-    <div className="absolute inset-0 w-full h-full overflow-hidden">
+    <div id="layer-video-bg" className="absolute inset-0 w-full h-full overflow-hidden">
       <video
         key={videoUrl}
         autoPlay

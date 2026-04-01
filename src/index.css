@@ -28,4 +28,11 @@ body {
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     background: rgba(255, 255, 255, 0.2);
   }
+  .custom-scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+  .custom-scrollbar-none {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+  }
 }

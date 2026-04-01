@@ -10,6 +10,12 @@ interface SVGFiltersProps {
   videoContrast?: number;
   videoSaturation?: number;
   videoHue?: number;
+  videoGamma?: number;
+  videoGammaR?: number;
+  videoGammaG?: number;
+  videoGammaB?: number;
+  immersiveGrain?: number;
+  immersiveScanlines?: number;
 }
 
 export default function SVGFilters({ 
@@ -18,7 +24,13 @@ export default function SVGFilters({
   videoBrightness = 1,
   videoContrast = 1,
   videoSaturation = 1,
-  videoHue = 0
+  videoHue = 0,
+  videoGamma = 1,
+  videoGammaR = 1,
+  videoGammaG = 1,
+  videoGammaB = 1,
+  immersiveGrain = 0.05,
+  immersiveScanlines = 0.1
 }: SVGFiltersProps) {
   return (
     <svg className="hidden" aria-hidden="true">
@@ -26,6 +38,11 @@ export default function SVGFilters({
         {/* Video Color Correction Filter */}
         <filter id="video-color-curves">
           <feColorMatrix type="saturate" values={`${videoSaturation}`} />
+          <feComponentTransfer>
+            <feFuncR type="gamma" exponent={`${videoGamma * videoGammaR}`} />
+            <feFuncG type="gamma" exponent={`${videoGamma * videoGammaG}`} />
+            <feFuncB type="gamma" exponent={`${videoGamma * videoGammaB}`} />
+          </feComponentTransfer>
           <feComponentTransfer>
             <feFuncR type="linear" slope={`${videoBrightness}`} intercept={`${(1 - videoContrast) / 2}`} />
             <feFuncG type="linear" slope={`${videoBrightness}`} intercept={`${(1 - videoContrast) / 2}`} />
@@ -37,10 +54,10 @@ export default function SVGFilters({
         {/* Immersive Film Overlay (Grain + Scanlines) */}
         <filter id="immersive-overlay">
           <feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" result="noise" />
-          <feColorMatrix type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.05 0" result="grain" />
+          <feColorMatrix type="matrix" values={`0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 ${immersiveGrain} 0`} result="grain" />
           <feFlood floodColor="black" result="black" />
           <feTurbulence type="fractalNoise" baseFrequency="0 0.5" numOctaves="1" result="scanlinesNoise" />
-          <feColorMatrix type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.1 0" result="scanlines" />
+          <feColorMatrix type="matrix" values={`0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 ${immersiveScanlines} 0`} result="scanlines" />
           <feMerge>
             <feMergeNode in="SourceGraphic" />
             <feMergeNode in="grain" />

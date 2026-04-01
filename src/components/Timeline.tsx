@@ -6,86 +6,31 @@
 import React from "react";
 import { Play, Pause, SkipBack, SkipForward, Clock, Layers, Trash2, Plus, Eye, EyeOff, Lock, Unlock } from "lucide-react";
 import { motion } from "motion/react";
+import { useEditor } from "../core/EditorContext";
 
-interface TimelineProps {
-  config: any;
-  onChange: (newConfig: any) => void;
-  activeLayerId: string;
-  onSelectLayer: (id: string) => void;
-}
+export default function Timeline() {
+  const { state, actions } = useEditor();
+  const { config, activeLayerId } = state;
 
-export default function Timeline({ config, onChange, activeLayerId, onSelectLayer }: TimelineProps) {
-  const addLayer = () => {
-    const newId = `layer-${Date.now()}`;
-    const newLayer = {
-      id: newId,
-      name: `Capa ${config.layers.length + 1}`,
-      type: "text",
-      text: "NUEVA CAPA",
-      fontSize: 80,
-      fontFamily: "Space Grotesk",
-      color: "#ffffff",
-      colorSecondary: "#cccccc",
-      fillOpacity: 0.8,
-      gradientConfig: {
-        type: 'linear',
-        angle: 180,
-        stops: [
-          { color: "#ffffff", position: 0, opacity: 1 },
-          { color: "#cccccc", position: 100, opacity: 1 }
-        ]
-      },
-      glowIntensity: 5,
-      sparkleSpeed: 2,
-      neonEmboss: true,
-      diegeticTexture: true,
-      glitch: false,
-      chromaticAberration: true,
-      bloom: true,
-      lightWrap: true,
-      editorialStyle: "default",
-      textAlign: "center",
-      mixBlendMode: "normal",
-      locked: false,
-      visible: true,
-      opacity: 1,
-      selectionBorderColor: "#3b82f6",
-      selectionBorderWidth: 2,
-      x: 0,
-      y: 0,
-    };
-    onChange({ ...config, layers: [...config.layers, newLayer] });
-    onSelectLayer(newId);
+  const handleToggleVisibility = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const layer = config.layers.find(l => l.id === id);
+    if (layer) actions.updateLayer(id, { visible: !layer.visible });
   };
 
-  const removeLayer = (id: string, e: React.MouseEvent) => {
+  const handleToggleLock = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (config.layers.length <= 1) return;
-    const newLayers = config.layers.filter((l: any) => l.id !== id);
-    onChange({ ...config, layers: newLayers });
-    if (activeLayerId === id) {
-      onSelectLayer(newLayers[0].id);
-    }
+    const layer = config.layers.find(l => l.id === id);
+    if (layer) actions.updateLayer(id, { locked: !layer.locked });
   };
 
-  const toggleLayerVisibility = (id: string, e: React.MouseEvent) => {
+  const handleRemoveLayer = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    const newLayers = config.layers.map((l: any) => 
-      l.id === id ? { ...l, visible: !l.visible } : l
-    );
-    onChange({ ...config, layers: newLayers });
-  };
-
-  const toggleLayerLock = (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    const newLayers = config.layers.map((l: any) => 
-      l.id === id ? { ...l, locked: !l.locked } : l
-    );
-    onChange({ ...config, layers: newLayers });
+    actions.removeLayer(id);
   };
 
   return (
-    <div className="w-full px-8 py-4 bg-neutral-950/40 backdrop-blur-3xl border-y border-white/5 flex flex-col gap-4 flex-shrink-0 z-20">
+    <div id="bottom-timeline-panel" className="w-full px-8 py-4 bg-neutral-950/40 backdrop-blur-3xl border-y border-white/5 flex flex-col gap-4 flex-shrink-0 z-20">
       {/* Controls & Time */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-6">
@@ -123,7 +68,7 @@ export default function Timeline({ config, onChange, activeLayerId, onSelectLaye
           <motion.button
             whileHover={{ scale: 1.02, y: -1 }}
             whileTap={{ scale: 0.98 }}
-            onClick={addLayer}
+            onClick={() => actions.addLayer()}
             className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 rounded-xl text-white font-black text-[10px] uppercase tracking-[0.2em] transition-all shadow-[0_0_30px_rgba(37,99,235,0.25)]"
           >
             <Plus size={14} />
@@ -146,7 +91,7 @@ export default function Timeline({ config, onChange, activeLayerId, onSelectLaye
           {config.layers.map((layer: any, i: number) => (
             <motion.div 
               key={layer.id}
-              onClick={() => onSelectLayer(layer.id)}
+              onClick={() => actions.selectLayer(layer.id)}
               className={`h-8 rounded-xl relative overflow-hidden transition-all duration-500 cursor-pointer group/track flex items-center px-4 border ${
                 activeLayerId === layer.id 
                   ? "bg-blue-500/10 border-blue-500/30 shadow-[0_0_15px_rgba(59,130,246,0.1)]" 
@@ -156,13 +101,13 @@ export default function Timeline({ config, onChange, activeLayerId, onSelectLaye
               <div className="flex items-center gap-3 z-10 w-64 flex-shrink-0">
                 <div className="flex items-center gap-1">
                   <button 
-                    onClick={(e) => toggleLayerVisibility(layer.id, e)}
+                    onClick={(e) => handleToggleVisibility(layer.id, e)}
                     className={`p-1 transition-colors ${layer.visible ? "text-blue-400" : "text-white/10 hover:text-white/30"}`}
                   >
                     {layer.visible ? <Eye size={12} /> : <EyeOff size={12} />}
                   </button>
                   <button 
-                    onClick={(e) => toggleLayerLock(layer.id, e)}
+                    onClick={(e) => handleToggleLock(layer.id, e)}
                     className={`p-1 transition-colors ${layer.locked ? "text-orange-400" : "text-white/10 hover:text-white/30"}`}
                   >
                     {layer.locked ? <Lock size={12} /> : <Unlock size={12} />}
@@ -176,7 +121,7 @@ export default function Timeline({ config, onChange, activeLayerId, onSelectLaye
                 <motion.button
                   whileHover={{ scale: 1.1, color: "#ef4444" }}
                   whileTap={{ scale: 0.9 }}
-                  onClick={(e) => removeLayer(layer.id, e)}
+                  onClick={(e) => handleRemoveLayer(layer.id, e)}
                   className="opacity-0 group-hover/track:opacity-100 p-1.5 text-white/20 transition-all hover:bg-red-500/10 rounded-lg"
                 >
                   <Trash2 size={12} />

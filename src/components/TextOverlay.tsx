@@ -19,6 +19,7 @@ interface GradientConfig {
 }
 
 interface TextOverlayProps {
+  id: string;
   key?: string | number;
   text: string;
   color: string;
@@ -52,6 +53,7 @@ interface TextOverlayProps {
 }
 
 export default function TextOverlay({
+  id,
   text,
   color,
   colorSecondary,
@@ -221,6 +223,7 @@ export default function TextOverlay({
 
   return (
     <motion.div
+      id={`text-overlay-item-${id}`}
       drag={!locked}
       dragMomentum={false}
       dragElastic={0.05}

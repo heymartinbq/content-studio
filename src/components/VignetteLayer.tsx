@@ -12,6 +12,7 @@ interface VignetteLayerProps {
 export default function VignetteLayer({ intensity, color, radius }: VignetteLayerProps) {
   return (
     <div
+      id="layer-vignette-overlay"
       className="absolute inset-0 pointer-events-none"
       style={{
         background: `radial-gradient(circle, transparent ${radius}%, ${color} ${100 + intensity}%)`,

@@ -1,0 +1,55 @@
+# AI Assistant Code Rules - Content Studio
+
+Este documento define las reglas de oro y el mapa estructural para cualquier asistente de IA que trabaje en este repositorio. Su cumplimiento es obligatorio para mantener la integridad semántica y técnica del proyecto.
+
+## 🗺️ Mapa de Áreas de la Aplicación (DOM IDs)
+
+Para manipular o referenciar elementos de la interfaz, utiliza siempre los siguientes identificadores:
+
+### 1. Estructura Global
+- **`app-root`**: Contenedor principal de toda la aplicación.
+- **`main-header`**: Barra superior que contiene el branding y acciones globales.
+- **`app-controls-footer`**: Región inferior que agrupa el Timeline y el Panel de Edición.
+
+### 2. Región del Escenario (Canvas)
+- **`canvas-stage-region`**: El elemento `<main>` que centra el escenario.
+- **`preview-canvas-board`**: El tablero real donde se renderizan las capas (Vite + Framer Motion).
+
+### 3. Capas de Contenido (Z-Index Order)
+- **`layer-video-bg`**: Fondo de video abstracto/ciudad.
+- **`layer-webcam-bg`**: Fuente de video de la cámara del usuario.
+- **`layer-vignette-overlay`**: Capa de post-procesado para viñeta y enfoque.
+- **`text-overlay-item-{id}`**: Capas de texto individuales (dinámicas).
+
+### 4. Widgets y Paneles
+- **`sidebar-editor-panel`**: Panel lateral de propiedades detalladas.
+- **`bottom-timeline-panel`**: Controles de tiempo y gestión de capas.
+- **`floating-editor-widget`**: Editor rápido y arrastrable sobre el canvas.
+
+---
+
+## 🛠️ Reglas de Desarrollo
+
+### 1. Integridad de Identidad
+- El nombre oficial del proyecto es **Content Studio**.
+- **PROBHIIDO**: Usar "NEON FRAME PRO", "AI Studio" o referencias a "AI-Assisted" en el código orientado al usuario.
+
+### 2. Estilo Visual (Aesthetics First)
+- Mantener siempre la estética **Premium / Dark Mode / Glassmorphism**.
+- Los componentes deben utilizar `motion` (Framer Motion) para transiciones fluidas.
+- No utilizar colores básicos (red, blue, green). Usar la paleta definida en Tailwind CSS 4 y variables HSL.
+
+### 3. Estructura de Componentes
+- Cada nueva capa o filtro debe registrarse con un ID único y descriptivo en el DOM.
+- Los filtros SVG deben definirse en `src/components/SVGFilters.tsx` y referenciarse mediante `url(#id)`.
+
+### 4. Resiliencia de Entorno
+- Validar siempre la existencia de APIs de hardware (ej: `navigator.mediaDevices`) antes de su uso.
+- Evitar dependencias externas críticas para assets visuales (preferir Data URLs o SVG locales).
+
+---
+
+## 📐 Axiomas Arquitectónicos
+- **Soberanía del Dato**: Toda la configuración reside en el objeto `config` del `App.tsx`.
+- **Fidelidad Semántica**: Los nombres de variables deben reflejar su función editorial (ej: `glowIntensity`, `diegeticTexture`).
+- **Phi-Rank Compliance**: La jerarquía visual debe priorizar el `preview-canvas-board` como el Nexus central.

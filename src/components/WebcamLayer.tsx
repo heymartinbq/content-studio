@@ -20,6 +20,10 @@ export default function WebcamLayer({ active, opacity, blur }: WebcamLayerProps)
     async function setupWebcam() {
       if (active) {
         try {
+          if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            console.error("Webcam access is not supported in this browser or context (requires HTTPS or localhost).");
+            return;
+          }
           stream = await navigator.mediaDevices.getUserMedia({ video: true });
           if (videoRef.current) {
             videoRef.current.srcObject = stream;
@@ -49,7 +53,7 @@ export default function WebcamLayer({ active, opacity, blur }: WebcamLayerProps)
   if (!active) return null;
 
   return (
-    <div className="absolute inset-0 w-full h-full overflow-hidden">
+    <div id="layer-webcam-bg" className="absolute inset-0 w-full h-full overflow-hidden">
       <video
         ref={videoRef}
         autoPlay
@@ -58,7 +62,7 @@ export default function WebcamLayer({ active, opacity, blur }: WebcamLayerProps)
         className="w-full h-full object-cover"
         style={{
           opacity: opacity / 100,
-          filter: `blur(${blur}px)`,
+          filter: `blur(${blur}px) url(#video-color-curves)`,
           transform: "scaleX(-1)", // Mirror effect
         }}
       />
