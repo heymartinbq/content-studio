@@ -1,5 +1,4 @@
 use wasm_bindgen::prelude::*;
-use serde::{Serialize, Deserialize};
 use std::collections::HashMap;
 
 #[wasm_bindgen]
