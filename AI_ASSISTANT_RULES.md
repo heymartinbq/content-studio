@@ -53,3 +53,4 @@ Para manipular o referenciar elementos de la interfaz, utiliza siempre los sigui
 - **Soberanía del Dato**: Toda la configuración reside en el objeto `config` del `App.tsx`.
 - **Fidelidad Semántica**: Los nombres de variables deben reflejar su función editorial (ej: `glowIntensity`, `diegeticTexture`).
 - **Phi-Rank Compliance**: La jerarquía visual debe priorizar el `preview-canvas-board` como el Nexus central.
+- **Documentación Mandatoria (Husky)**: Cada commit de código DEBE incluir actualizaciones en `CHANGELOG.md`, `README.md`, `AI_ASSISTANT_RULES.md` y `ROADMAP.md`. El validador pre-commit bloqueará cualquier intento que no cumpla con esta sincronía estructural.
