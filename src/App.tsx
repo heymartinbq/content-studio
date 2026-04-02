@@ -7,12 +7,11 @@ import { useEffect, useRef } from "react";
 import SVGFilters from "./components/SVGFilters";
 import VideoLayer from "./components/VideoLayer";
 import WebcamLayer from "./components/WebcamLayer";
-import TextOverlay from "./components/TextOverlay";
-import VignetteLayer from "./components/VignetteLayer";
 import EditorPanel from "./components/EditorPanel";
 import Timeline from "./components/Timeline";
 import FloatingEditor from "./components/FloatingEditor";
 import Debugger from "./components/Debugger";
+import MasterCanvas from "./components/MasterCanvas";
 import { useEditor } from "./core/EditorContext";
 import { Maximize2, Minimize2, Download, Layers, Camera, Edit3 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
@@ -23,6 +22,8 @@ export default function App() {
   
   const canvasRef = useRef<HTMLDivElement>(null);
   const mainRef = useRef<HTMLElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const webcamRef = useRef<HTMLVideoElement>(null);
 
   const selectedLayer = config.layers.find(l => l.id === activeLayerId);
 
@@ -187,67 +188,16 @@ export default function App() {
             filter: config.noiseIntensity > 0 ? "url(#subtle-noise)" : "none",
           }}
         >
-          <VideoLayer
-            videoUrl={config.videoUrl}
-            opacity={config.videoOpacity}
-            blur={config.videoBlur}
-            showImmersiveOverlay={config.showImmersiveOverlay}
-            grain={config.immersiveGrain}
-            scanlines={config.immersiveScanlines}
-            brightness={config.videoBrightness}
-            contrast={config.videoContrast}
-            saturation={config.videoSaturation}
-          />
-
-
-          <WebcamLayer
-            active={config.useWebcam}
-            opacity={config.webcamOpacity}
-            blur={config.webcamBlur}
-          />
+          <VideoLayer videoUrl={config.videoUrl} videoRef={videoRef} />
           
-          <VignetteLayer
-            intensity={config.vignetteIntensity}
-            color={config.vignetteColor}
-            radius={config.vignetteRadius}
+          <WebcamLayer active={config.useWebcam} webcamRef={webcamRef} />
+          
+          {/* Topografía Universal Canvas (Remplaza Vignette y Video/Webcam visuales) */}
+          <MasterCanvas 
+            config={config} 
+            videoRef={videoRef} 
+            webcamRef={webcamRef} 
           />
-
-          {config.layers.map((layer) => (
-            layer.visible && (
-              <TextOverlay
-                id={layer.id}
-                key={layer.id}
-                text={layer.text || ""}
-                color={layer.color || "#ffffff"}
-                colorSecondary={layer.colorSecondary}
-                fillOpacity={layer.fillOpacity}
-                gradientConfig={layer.gradientConfig}
-                glowIntensity={layer.glowIntensity || 0}
-                sparkleSpeed={layer.sparkleSpeed || 0}
-                fontSize={layer.fontSize || 16}
-                fontFamily={layer.fontFamily || "sans-serif"}
-                neonEmboss={layer.neonEmboss || false}
-                diegeticTexture={layer.diegeticTexture || false}
-                glitch={layer.glitch || false}
-                chromaticAberration={layer.chromaticAberration || false}
-                bloom={layer.bloom || false}
-                lightWrap={layer.lightWrap || false}
-                editorialStyle={layer.editorialStyle as any}
-                mixBlendMode={layer.mixBlendMode || "normal"}
-                textAlign={layer.textAlign as any}
-                opacity={layer.opacity ?? 1}
-                x={layer.x || 0}
-                y={layer.y || 0}
-                isActive={activeLayerId === layer.id}
-                locked={layer.locked}
-                onPositionChange={(x, y) => actions.updateLayer(layer.id, { x, y })}
-                onSelect={() => actions.selectLayer(layer.id)}
-                selectionBorderColor={layer.selectionBorderColor}
-                selectionBorderWidth={layer.selectionBorderWidth}
-                dragConstraints={canvasRef}
-              />
-            )
-          ))}
         </motion.div>
 
         {/* Preview Mode Exit Button */}

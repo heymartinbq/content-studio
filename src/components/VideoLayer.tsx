@@ -5,75 +5,38 @@
  * por VortexCanvas (Rust/Wasm SIMD) en tiempo real.
  */
 
-import { useRef } from "react";
-import VortexCanvas from "./VortexCanvas";
+import { useEffect } from "react";
+import type { RefObject } from "react";
 
 interface VideoLayerProps {
   videoUrl: string;
-  opacity: number;
-  blur: number;
-  showImmersiveOverlay?: boolean;
-  grain?: number;
-  scanlines?: number;
-  brightness?: number;
-  contrast?: number;
-  saturation?: number;
+  videoRef: RefObject<HTMLVideoElement | null>;
 }
 
 export default function VideoLayer({
   videoUrl,
-  opacity,
-  blur,
-  showImmersiveOverlay = false,
-  grain = 0,
-  scanlines = 0,
-  brightness = 1.0,
-  contrast = 1.0,
-  saturation = 1.0,
+  videoRef,
 }: VideoLayerProps) {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const hasVortexEffects = showImmersiveOverlay;
+  
+  // Forzamos el play si fuera necesario
+  useEffect(() => {
+    if (videoRef.current) {
+        videoRef.current.play().catch(e => console.warn("Autoplay blocked:", e));
+    }
+  }, [videoUrl, videoRef]);
 
   return (
-    <div id="layer-video-bg" className="absolute inset-0 w-full h-full overflow-hidden">
-      {/* Video fuente — visible solo si no hay efectos Vortex activos */}
-      <video
-        ref={videoRef}
-        key={videoUrl}
-        autoPlay
-        loop
-        muted
-        playsInline
-        className="w-full h-full object-cover transition-all duration-500"
-        style={{
-          opacity: hasVortexEffects ? 0 : opacity,
-          filter: blur > 0 ? `blur(${blur}px)` : "none",
-        }}
-      >
-        <source src={videoUrl} type="video/mp4" />
-      </video>
-
-      {/* Motor Vortex: procesa frames con SIMD Rust/Wasm */}
-      {hasVortexEffects && (
-        <div
-          style={{
-            filter: blur > 0 ? `blur(${blur}px)` : "none",
-          }}
-          className="absolute inset-0"
-        >
-          <VortexCanvas
-            videoRef={videoRef}
-            width={1920}
-            height={1080}
-            grain={grain}
-            scanlines={scanlines}
-            opacity={opacity}
-            brightness={brightness}
-            contrast={contrast}
-            saturation={saturation}
-          />
-        </div>
-      )}
-    </div>
+    <video
+      ref={videoRef}
+      key={videoUrl}
+      autoPlay
+      loop
+      muted
+      playsInline
+      crossOrigin="anonymous"
+      className="hidden opacity-0 pointer-events-none absolute"
+    >
+      <source src={videoUrl} type="video/mp4" />
+    </video>
   );
 }

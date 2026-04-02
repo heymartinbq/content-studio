@@ -1,4 +1,4 @@
-# AI Assistant Code Rules - Content Studio `v1.4.1`
+# AI Assistant Code Rules - Content Studio `v1.5.0`
 
 Este documento define las reglas de oro y el mapa estructural para cualquier asistente de IA que trabaje en este repositorio. Su cumplimiento es obligatorio para mantener la integridad semántica y técnica del proyecto.
 

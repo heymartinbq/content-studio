@@ -1,4 +1,4 @@
-# Content Studio ROADMAP `v1.4.1`
+# Content Studio ROADMAP `v1.5.0`
 
 Visión futura y objetivos estratégicos para el **Content Studio**.
 

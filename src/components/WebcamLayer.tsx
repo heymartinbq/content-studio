@@ -3,16 +3,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
+
+import type { RefObject } from "react";
 
 interface WebcamLayerProps {
   active: boolean;
-  opacity: number;
-  blur: number;
+  webcamRef: RefObject<HTMLVideoElement | null>;
 }
 
-export default function WebcamLayer({ active, opacity, blur }: WebcamLayerProps) {
-  const videoRef = useRef<HTMLVideoElement>(null);
+export default function WebcamLayer({ active, webcamRef }: WebcamLayerProps) {
 
   useEffect(() => {
     let stream: MediaStream | null = null;
@@ -25,8 +25,8 @@ export default function WebcamLayer({ active, opacity, blur }: WebcamLayerProps)
             return;
           }
           stream = await navigator.mediaDevices.getUserMedia({ video: true });
-          if (videoRef.current) {
-            videoRef.current.srcObject = stream;
+          if (webcamRef.current) {
+            webcamRef.current.srcObject = stream;
           }
         } catch (err) {
           console.error("Error accessing webcam:", err);
@@ -35,8 +35,8 @@ export default function WebcamLayer({ active, opacity, blur }: WebcamLayerProps)
         if (stream) {
           stream.getTracks().forEach(track => track.stop());
         }
-        if (videoRef.current) {
-          videoRef.current.srcObject = null;
+        if (webcamRef.current) {
+          webcamRef.current.srcObject = null;
         }
       }
     }
@@ -48,24 +48,17 @@ export default function WebcamLayer({ active, opacity, blur }: WebcamLayerProps)
         stream.getTracks().forEach(track => track.stop());
       }
     };
-  }, [active]);
+  }, [active, webcamRef]);
 
   if (!active) return null;
 
   return (
-    <div id="layer-webcam-bg" className="absolute inset-0 w-full h-full overflow-hidden">
-      <video
-        ref={videoRef}
-        autoPlay
-        playsInline
-        muted
-        className="w-full h-full object-cover"
-        style={{
-          opacity: opacity / 100,
-          filter: `blur(${blur}px) url(#video-color-curves)`,
-          transform: "scaleX(-1)", // Mirror effect
-        }}
-      />
-    </div>
+    <video
+      ref={webcamRef}
+      autoPlay
+      playsInline
+      muted
+      className="hidden opacity-0 pointer-events-none absolute"
+    />
   );
 }

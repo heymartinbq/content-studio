@@ -2,6 +2,11 @@
 
 All notable changes to the **Content Studio** project will be documented in this file.
 
+## [1.5.0] - 2026-04-02
+### Changed
+- **Pipeline Universal Canvas**: Abolición completada de toda la arquitectura DOM/React Composition (`framer-motion`, HTML layers). Toda la capa gráfica viaja en Buffer (`MasterCanvas.tsx`), con físicas unificadas D&D e interpolación de Hit-Testing en memoria nativa Canvas para preparación Direct-to-FFmpeg.
+- **WebRTC SIMD Filter**: La capa `WebcamLayer` ha sido oculta bajo el DOM y extraída en Buffer. Su data fotométrica ahora alimenta incondicionalmente el bucle de Inmersión Wasm (SIMD); el Grano, Viñeta y Luma afectan a la cámara integrándola con el proyecto completo fotograma a fotograma.
+
 ## [1.4.1] - 2026-04-02
 ### Fixed
 - **Dynamic Film Grain PRNG**: Fixed an issue where the Wasm SIMD engine generated static noise. Injected `performance.now()` across the FFI bounds to create an authentic photochemical dynamic grain that changes per frame.
