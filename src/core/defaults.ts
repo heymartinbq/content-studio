@@ -52,7 +52,7 @@ export const INITIAL_LAYERS: Layer[] = [
 
 export const INITIAL_CONFIG: EditorConfig = {
   aspectRatio: "16/9",
-  videoUrl: "https://assets.mixkit.co/videos/preview/mixkit-abstract-neon-lights-in-motion-27371-large.mp4",
+  videoUrl: "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4",
   videoOpacity: 0.8,
   videoBlur: 2,
   videoBrightness: 1,

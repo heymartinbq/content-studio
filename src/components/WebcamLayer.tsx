@@ -58,7 +58,8 @@ export default function WebcamLayer({ active, webcamRef }: WebcamLayerProps) {
       autoPlay
       playsInline
       muted
-      className="hidden opacity-0 pointer-events-none absolute"
+      onLoadedMetadata={() => webcamRef.current?.play().catch(e => console.warn(e))}
+      className="absolute inset-0 w-full h-full object-cover z-[-1] opacity-0 pointer-events-none"
     />
   );
 }

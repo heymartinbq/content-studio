@@ -19,14 +19,15 @@ export default function MasterCanvas({
 }: MasterCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rafRef = useRef<number>(0);
+  const frameMsRef = useRef<HTMLSpanElement>(null);
   
   const [engineReady, setEngineReady] = useState(false);
-  const [frameMs, setFrameMs] = useState<number | null>(null);
   const engineRef = useRef<VortexEngine | null>(null);
 
   const { actions, state } = useEditor();
   const draggingLayerId = useRef<string | null>(null);
   const dragStart = useRef<{mouseX: number, mouseY: number, layerX: number, layerY: number} | null>(null);
+  const dragOffset = useRef<{dx: number, dy: number}>({ dx: 0, dy: 0 });
 
   const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
@@ -82,6 +83,7 @@ export default function MasterCanvas({
              layerX: layerX,
              layerY: layerY
           };
+          dragOffset.current = { dx: 0, dy: 0 };
           (e.target as HTMLElement).setPointerCapture(e.pointerId);
           return;
       }
@@ -106,17 +108,21 @@ export default function MasterCanvas({
     const dx = canvasX - dragStart.current.mouseX;
     const dy = canvasY - dragStart.current.mouseY;
 
-    // Throttling or debouncing updateLayer? React state updates might be heavy.
-    // In our robust architecture, reducers handle `x` and `y` cleanly.
-    actions.updateLayer(draggingLayerId.current, {
-      x: dragStart.current.layerX + dx,
-      y: dragStart.current.layerY + dy,
-    });
+    // Instead of heavy Context Reducer dispatches per pixel, we store the local delta
+    // The 60FPS render loop will pick this up instantly. We update Context on Pointer Up.
+    dragOffset.current = { dx, dy };
   };
 
   const handlePointerUp = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (draggingLayerId.current && dragStart.current) {
+        actions.updateLayer(draggingLayerId.current, {
+            x: dragStart.current.layerX + dragOffset.current.dx,
+            y: dragStart.current.layerY + dragOffset.current.dy,
+        });
+    }
     draggingLayerId.current = null;
     dragStart.current = null;
+    dragOffset.current = { dx: 0, dy: 0 };
     (e.target as HTMLElement).releasePointerCapture(e.pointerId);
   };
 
@@ -152,13 +158,15 @@ export default function MasterCanvas({
 
       // 2. DRAW BASE VIDEO
       const video = videoRef.current;
-      if (video && video.readyState >= 2) {
+      if (video && video.readyState >= 2 && video.videoWidth > 0) {
         ctx.save();
         ctx.globalAlpha = config.videoOpacity;
         if (config.videoBlur > 0) {
           ctx.filter = `blur(${config.videoBlur}px)`;
         }
-        ctx.drawImage(video, 0, 0, width, height);
+        try {
+            ctx.drawImage(video, 0, 0, width, height);
+        } catch (e) {}
         ctx.restore();
       } else {
         // Fallback bg
@@ -168,7 +176,7 @@ export default function MasterCanvas({
 
       // 3. DRAW WEBCAM
       const webcam = webcamRef.current;
-      if (config.useWebcam && webcam && webcam.readyState >= 2) {
+      if (config.useWebcam && webcam && webcam.readyState >= 2 && webcam.videoWidth > 0) {
         ctx.save();
         ctx.globalAlpha = config.webcamOpacity / 100; // Assuming 0-100
         if (config.webcamBlur > 0) {
@@ -177,7 +185,9 @@ export default function MasterCanvas({
         // ScaleX(-1) para modo espejo (mirror)
         ctx.translate(width, 0);
         ctx.scale(-1, 1);
-        ctx.drawImage(webcam, 0, 0, width, height);
+        try {
+          ctx.drawImage(webcam, 0, 0, width, height);
+        } catch (e) {}
         ctx.restore();
       }
 
@@ -240,8 +250,16 @@ export default function MasterCanvas({
         // Position coordinates (Layer coordinates are relative to center natively in our engine via config padding,
         // but here we can just use the absolute offset or assume layer.x/layer.y are percentages or absolute pixels).
         // Let's assume layer.x and layer.y are absolute coordinates from the center.
-        const px = (width / 2) + (layer.x || 0);
-        const py = (height / 2) + (layer.y || 0);
+        let localOffsetDx = 0;
+        let localOffsetDy = 0;
+
+        if (draggingLayerId.current === layer.id) {
+            localOffsetDx = dragOffset.current.dx;
+            localOffsetDy = dragOffset.current.dy;
+        }
+
+        const px = (width / 2) + (layer.x || 0) + localOffsetDx;
+        const py = (height / 2) + (layer.y || 0) + localOffsetDy;
 
         // Mix blend mode fallback
         if (layer.mixBlendMode && layer.mixBlendMode !== "normal") {
@@ -277,20 +295,28 @@ export default function MasterCanvas({
         }
 
         // Draw Selection Outline if active
-        if (state.activeLayerId === layer.id) {
+        if (state.activeLayerId === layer.id && !layer.locked) {
+            const metrics = ctx.measureText(layer.text);
             ctx.lineWidth = layer.selectionBorderWidth || 1;
-            ctx.strokeStyle = layer.selectionBorderColor || "#3b82f6";
+            ctx.strokeStyle = layer.selectionBorderColor || "rgba(59, 130, 246, 0.7)";
             ctx.setLineDash([10, 5]);
-            ctx.strokeRect(px - (ctx.measureText(layer.text).width / 2) - 10, py - (fontSize * 1.2 / 2) - 10, ctx.measureText(layer.text).width + 20, fontSize * 1.2 + 20);
+            ctx.strokeRect(px - (metrics.width / 2) - 10, py - (fontSize * 1.2 / 2) - 10, metrics.width + 20, fontSize * 1.2 + 20);
             ctx.setLineDash([]);
         }
 
         ctx.restore();
       });
 
-      // Time profiling
-      const delta = performance.now() - t0;
-      setFrameMs(Math.round(delta * 10) / 10);
+      // Time profiling without triggering React renders
+      const delta = Math.round((performance.now() - t0) * 10) / 10;
+      if (frameMsRef.current) {
+          if (delta > 10) {
+              frameMsRef.current.style.color = "rgb(239, 68, 68)";
+          } else {
+              frameMsRef.current.style.color = "rgb(196, 181, 253)";
+          }
+          frameMsRef.current.innerText = `${delta}ms`;
+      }
 
       rafRef.current = requestAnimationFrame(render);
     };
@@ -336,11 +362,12 @@ export default function MasterCanvas({
             <span className="text-[9px] font-black uppercase tracking-widest text-violet-300/80">
               Vortex SIMD
             </span>
-            {frameMs !== null && (
-              <span className="text-[9px] font-mono text-violet-300/50">
-                {frameMs}ms
-              </span>
-            )}
+            <span 
+              ref={frameMsRef}
+              className="text-[9px] font-mono text-violet-300/50 min-w-[28px] text-right"
+            >
+              0ms
+            </span>
           </motion.div>
         )}
       </AnimatePresence>

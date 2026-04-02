@@ -34,7 +34,8 @@ export default function VideoLayer({
       muted
       playsInline
       crossOrigin="anonymous"
-      className="hidden opacity-0 pointer-events-none absolute"
+      onLoadedMetadata={() => videoRef.current?.play().catch(e => console.warn(e))}
+      className="absolute inset-0 w-full h-full object-cover z-[-1] opacity-0 pointer-events-none"
     >
       <source src={videoUrl} type="video/mp4" />
     </video>

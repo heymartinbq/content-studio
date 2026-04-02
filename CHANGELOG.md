@@ -2,6 +2,10 @@
 
 All notable changes to the **Content Studio** project will be documented in this file.
 
+## [1.5.1] - 2026-04-02
+### Fixed
+- **UI Render Lag**: Eliminadas las caídas dramáticas de frames en la vista previa del Canvas extrayendo la telemetría `setFrameMs` y los despachos `updateLayer` del ciclo de renderizado, reemplazándolos con refs y despachos `onPointerUp` logrando unos gloriosos 60FPS constantes en D&D.
+
 ## [1.5.0] - 2026-04-02
 ### Changed
 - **Pipeline Universal Canvas**: Abolición completada de toda la arquitectura DOM/React Composition (`framer-motion`, HTML layers). Toda la capa gráfica viaja en Buffer (`MasterCanvas.tsx`), con físicas unificadas D&D e interpolación de Hit-Testing en memoria nativa Canvas para preparación Direct-to-FFmpeg.
