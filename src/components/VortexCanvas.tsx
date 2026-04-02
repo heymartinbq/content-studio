@@ -11,10 +11,11 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
+import type { RefObject } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface VortexCanvasProps {
-  videoRef: React.RefObject<HTMLVideoElement | null>;
+  videoRef: RefObject<HTMLVideoElement | null>;
   width: number;
   height: number;
   grain: number;

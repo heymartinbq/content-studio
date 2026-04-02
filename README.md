@@ -1,4 +1,4 @@
-# 🎬 Content Studio - Advanced Editorial Overlay System
+# 🎬 Content Studio — Advanced Editorial Overlay System `v1.2.1`
 
 **Content Studio** is a professional-grade web application designed for real-time video and text compositions. It provides creators with a high-end interface to craft visually stunning overlays, utilizing advanced SVG filters, motion graphics, and a sophisticated color grading engine.
 
