@@ -6,6 +6,7 @@ All notable changes to the **Content Studio** project will be documented in this
 ### Changed
 - **Sovereign Engine & Zero-Waste Frontend**: Purga total de `motion/react` (Framer Motion), `express`, `dotenv`. Toda la animación del UI se ejecuta con CSS nativo de Tailwind v4 (`animate-in`, `fade-in`, `transition`).
 - **Typescript Cero Errores**: Se corrigieron interfaces de componentes y remoción de props obsoletos (como `dragConstraints`) garantizando una compilación inmaculada de TS en modo estricto.
+- **Git Tracking Optimization**: Se ignoró `src-rs/target/` explícitamente en el `.gitignore` y se restauró el track principal del demo de background interactivo comprimido.
 
 ## [1.5.1] - 2026-04-02
 ### Fixed
