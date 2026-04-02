@@ -1,21 +1,12 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
-import React from "react";
-import { motion } from "motion/react";
+import React, { useRef } from "react";
 import { Type, X, GripVertical, Palette, Sliders, Layout, Plus, Trash2 } from "lucide-react";
 import { useEditor } from "../core/EditorContext";
 
-interface FloatingEditorProps {
-  dragConstraints?: React.RefObject<HTMLDivElement | null>;
-}
-
-export default function FloatingEditor({ dragConstraints }: FloatingEditorProps) {
+export default function FloatingEditor() {
   const { state, actions } = useEditor();
   const { config, activeLayerId } = state;
-  
+  const dragRef = useRef<HTMLDivElement>(null);
+
   const layer = config.layers.find(l => l.id === activeLayerId);
   if (!layer) return null;
 
@@ -24,15 +15,10 @@ export default function FloatingEditor({ dragConstraints }: FloatingEditorProps)
   };
 
   return (
-    <motion.div
+    <div
       id="floating-editor-widget"
-      initial={{ opacity: 0, y: 20, scale: 0.95 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: 20, scale: 0.95 }}
-      drag
-      dragMomentum={false}
-      dragConstraints={dragConstraints}
-      className="absolute top-10 left-10 z-[100] w-80 bg-neutral-900/90 backdrop-blur-3xl border border-white/10 rounded-3xl shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] overflow-hidden"
+      ref={dragRef}
+      className="absolute top-10 left-10 z-[100] w-80 bg-neutral-900/90 backdrop-blur-3xl border border-white/10 rounded-3xl shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-bottom-4 duration-300"
     >
       <div className="flex items-center justify-between px-5 py-4 bg-white/5 border-b border-white/5 cursor-grab active:cursor-grabbing">
         <div className="flex items-center gap-3">
@@ -42,14 +28,14 @@ export default function FloatingEditor({ dragConstraints }: FloatingEditorProps)
           </div>
           <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/80">{layer.name}</span>
         </div>
-        <button 
+        <button
           onClick={() => actions.toggleFloatingEditor(false)}
-          className="p-2 hover:bg-white/10 rounded-xl transition-colors text-white/40 hover:text-white"
+          className="p-2 hover:bg-white/10 rounded-xl transition-all hover:scale-110 active:scale-90 text-white/40 hover:text-white"
         >
           <X size={16} />
         </button>
       </div>
-      
+
       <div className="p-5 space-y-6">
         {/* Text Area */}
         <div className="space-y-2">
@@ -109,9 +95,9 @@ export default function FloatingEditor({ dragConstraints }: FloatingEditorProps)
           <div className="flex justify-between items-center">
             <span className="text-[9px] font-black uppercase tracking-widest text-white/40">Gradiente</span>
             <div className="flex gap-2">
-              <button 
-                onClick={() => handleLayerChange("gradientConfig", { ...(layer.gradientConfig || { angle: 180, stops: [] }), type: 'linear' })}
-                className={`px-2 py-1 rounded-md text-[8px] font-bold uppercase transition-all ${layer.gradientConfig?.type === 'linear' ? "bg-blue-500 text-white" : "bg-white/5 text-white/40"}`}
+              <button
+                onClick={() => handleLayerChange("gradientConfig", { ...(layer.gradientConfig || { angle: 180, stops: [] }), type: "linear" })}
+                className={`px-2 py-1 rounded-md text-[8px] font-bold uppercase transition-all ${layer.gradientConfig?.type === "linear" ? "bg-blue-500 text-white" : "bg-white/5 text-white/40"}`}
               >
                 Linear
               </button>
@@ -121,18 +107,18 @@ export default function FloatingEditor({ dragConstraints }: FloatingEditorProps)
           <div className="space-y-3">
             <div className="flex justify-between items-center">
               <span className="text-[8px] font-black uppercase tracking-widest text-white/20">Paradas</span>
-              <button 
+              <button
                 onClick={() => {
                   const newStops = [...(layer.gradientConfig?.stops || [])];
                   newStops.push({ color: "#ffffff", position: 100, opacity: 1 });
-                  handleLayerChange("gradientConfig", { ...(layer.gradientConfig || { type: 'linear', angle: 180 }), stops: newStops });
+                  handleLayerChange("gradientConfig", { ...(layer.gradientConfig || { type: "linear", angle: 180 }), stops: newStops });
                 }}
                 className="p-1 hover:bg-white/5 rounded-md text-white/40 hover:text-white transition-all"
               >
                 <Plus size={12} />
               </button>
             </div>
-            
+
             <div className="space-y-3 max-h-[100px] overflow-y-auto pr-1 custom-scrollbar">
               {layer.gradientConfig?.stops?.map((stop: any, index: number) => (
                 <div key={index} className="flex items-center gap-3 bg-white/[0.02] p-2 rounded-xl border border-white/5">
@@ -151,19 +137,19 @@ export default function FloatingEditor({ dragConstraints }: FloatingEditorProps)
                       <span>POS: {stop.position}%</span>
                     </div>
                     <input
-                        type="range"
-                        min="0"
-                        max="100"
-                        value={stop.position}
-                        onChange={(e) => {
-                            const newStops = [...layer.gradientConfig.stops];
-                            newStops[index] = { ...stop, position: parseInt(e.target.value) };
-                            handleLayerChange("gradientConfig", { ...layer.gradientConfig, stops: newStops });
-                        }}
-                        className="w-full h-0.5 bg-white/5 rounded-full appearance-none accent-blue-500 cursor-pointer"
+                      type="range"
+                      min="0"
+                      max="100"
+                      value={stop.position}
+                      onChange={(e) => {
+                        const newStops = [...layer.gradientConfig.stops];
+                        newStops[index] = { ...stop, position: parseInt(e.target.value) };
+                        handleLayerChange("gradientConfig", { ...layer.gradientConfig, stops: newStops });
+                      }}
+                      className="w-full h-0.5 bg-white/5 rounded-full appearance-none accent-blue-500 cursor-pointer"
                     />
                   </div>
-                  <button 
+                  <button
                     onClick={() => {
                       const newStops = layer.gradientConfig.stops.filter((_: any, i: number) => i !== index);
                       handleLayerChange("gradientConfig", { ...layer.gradientConfig, stops: newStops });
@@ -207,6 +193,6 @@ export default function FloatingEditor({ dragConstraints }: FloatingEditorProps)
           </div>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }

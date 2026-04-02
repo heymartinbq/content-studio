@@ -12,7 +12,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import type { RefObject } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+
 import { getVortexEngine } from '../core/wasm-bridge';
 import type { VortexEngine } from '../core/wasm-bridge';
 
@@ -108,33 +108,22 @@ export default function VortexCanvas({
       />
 
       {/* Vortex Active Badge */}
-      <AnimatePresence>
-        {engineReady && (
-          <motion.div
-            id="vortex-engine-badge"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 8 }}
-            className="absolute bottom-3 right-3 flex items-center gap-2 px-3 py-1.5
-                       bg-black/40 backdrop-blur-xl border border-violet-500/20
-                       rounded-full pointer-events-none z-50"
-          >
-            <motion.span
-              animate={{ opacity: [1, 0.3, 1] }}
-              transition={{ duration: 1.5, repeat: Infinity }}
-              className="w-1.5 h-1.5 rounded-full bg-violet-400"
-            />
-            <span className="text-[9px] font-black uppercase tracking-widest text-violet-300/80">
-              Vortex SIMD
+      {engineReady && (
+        <div
+          id="vortex-engine-badge"
+          className="absolute bottom-3 right-3 flex items-center gap-2 px-3 py-1.5 bg-black/40 backdrop-blur-xl border border-violet-500/20 rounded-full pointer-events-none z-50 animate-in fade-in slide-in-from-bottom-2 duration-500"
+        >
+          <span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse" />
+          <span className="text-[9px] font-black uppercase tracking-widest text-violet-300/80">
+            Vortex SIMD
+          </span>
+          {frameMs !== null && (
+            <span className="text-[9px] font-mono text-violet-300/50">
+              {frameMs}ms
             </span>
-            {frameMs !== null && (
-              <span className="text-[9px] font-mono text-violet-300/50">
-                {frameMs}ms
-              </span>
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
+          )}
+        </div>
+      )}
     </div>
   );
 }

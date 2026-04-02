@@ -1,4 +1,4 @@
-# AI Assistant Code Rules - Content Studio `v1.5.1`
+# AI Assistant Code Rules - Content Studio `v1.9.1`
 
 Este documento define las reglas de oro y el mapa estructural para cualquier asistente de IA que trabaje en este repositorio. Su cumplimiento es obligatorio para mantener la integridad semántica y técnica del proyecto.
 
@@ -13,7 +13,7 @@ Para manipular o referenciar elementos de la interfaz, utiliza siempre los sigui
 
 ### 2. Región del Escenario (Canvas)
 - **`canvas-stage-region`**: El elemento `<main>` que centra el escenario.
-- **`preview-canvas-board`**: El tablero real donde se renderizan las capas (Vite + Framer Motion).
+- **`preview-canvas-board`**: El tablero real donde se renderizan las capas (Vite + React nativo / Tailwind Transitions).
 
 ### 3. Capas de Contenido (Z-Index Order)
 - **`layer-video-bg`**: Fondo de video abstracto/ciudad.
@@ -36,7 +36,7 @@ Para manipular o referenciar elementos de la interfaz, utiliza siempre los sigui
 
 ### 2. Estilo Visual (Aesthetics First)
 - Mantener siempre la estética **Premium / Dark Mode / Glassmorphism**.
-- Los componentes deben utilizar `motion` (Framer Motion) para transiciones fluidas.
+- Los componentes **NO** deben usar librerías externas de animación (como motion/react). Toda animación debe construirse con clases nativas de Tailwind (`animate-in`, `fade-in`, `transition`) garantizando la filosofía Zero-Waste.
 - No utilizar colores básicos (red, blue, green). Usar la paleta definida en Tailwind CSS 4 y variables HSL.
 
 ### 3. Estructura de Componentes
