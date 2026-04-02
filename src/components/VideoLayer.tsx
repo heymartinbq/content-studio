@@ -15,6 +15,9 @@ interface VideoLayerProps {
   showImmersiveOverlay?: boolean;
   grain?: number;
   scanlines?: number;
+  brightness?: number;
+  contrast?: number;
+  saturation?: number;
 }
 
 export default function VideoLayer({
@@ -24,6 +27,9 @@ export default function VideoLayer({
   showImmersiveOverlay = false,
   grain = 0,
   scanlines = 0,
+  brightness = 1.0,
+  contrast = 1.0,
+  saturation = 1.0,
 }: VideoLayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const hasVortexEffects = showImmersiveOverlay;
@@ -62,6 +68,9 @@ export default function VideoLayer({
             grain={grain}
             scanlines={scanlines}
             opacity={opacity}
+            brightness={brightness}
+            contrast={contrast}
+            saturation={saturation}
           />
         </div>
       )}

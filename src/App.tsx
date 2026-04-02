@@ -194,6 +194,9 @@ export default function App() {
             showImmersiveOverlay={config.showImmersiveOverlay}
             grain={config.immersiveGrain}
             scanlines={config.immersiveScanlines}
+            brightness={config.videoBrightness}
+            contrast={config.videoContrast}
+            saturation={config.videoSaturation}
           />
 
 

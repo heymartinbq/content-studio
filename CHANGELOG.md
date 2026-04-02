@@ -5,7 +5,7 @@ All notable changes to the **Content Studio** project will be documented in this
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.3.0] - 2026-04-02
+## [1.4.0] - 2026-04-02
 
 ### Changed
 - **Arquitectura de Motor (Main Thread)**: `VortexCanvas` fue reescrito para utilizar el motor WASM directamente en el hilo principal (`requestAnimationFrame`). La optimización SIMD de Rust asegura latencias menores a 5ms por frame, eliminando la necesidad de WebWorkers propensos a errores silenciosos de resolución de Wasm en Vite.

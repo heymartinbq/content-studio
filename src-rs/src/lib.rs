@@ -70,19 +70,23 @@ pub extern "C" fn vortex_process_frame(
     height: u32,
     grain: f32,
     scanlines: f32,
+    brightness: f32,
+    contrast: f32,
+    saturation: f32,
 ) {
     let len = (width * height * 4) as usize;
     unsafe {
-        VideoProcessor::process_frame(ptr, len, grain, scanlines, width);
+        VideoProcessor::process_frame(ptr, len, grain, scanlines, width, brightness, contrast, saturation);
     }
 }
 
 /// Debounce inteligente de sliders
 #[no_mangle]
-pub extern "C" fn debounce_update(_key_ptr: *const u8, key_len: usize, value: f64, delta: f64) -> bool {
+pub extern "C" fn debounce_update(key_ptr: *const u8, key_len: usize, value: f64, delta: f64) -> bool {
     unsafe {
         if let Some(ref mut engine) = ENGINE_INSTANCE {
-            let key = format!("input_{}", key_len); 
+            let slice = std::slice::from_raw_parts(key_ptr, key_len);
+            let key = std::str::from_utf8(slice).unwrap_or("unknown").to_string();
             engine.filter.check_significant_change(key, value, delta)
         } else {
             true

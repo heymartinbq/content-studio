@@ -23,6 +23,9 @@ interface VortexCanvasProps {
   grain: number;
   scanlines: number;
   opacity: number;
+  brightness?: number;
+  contrast?: number;
+  saturation?: number;
 }
 
 export default function VortexCanvas({
@@ -32,6 +35,9 @@ export default function VortexCanvas({
   grain,
   scanlines,
   opacity,
+  brightness = 1.0,
+  contrast = 1.0,
+  saturation = 1.0,
 }: VortexCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rafRef = useRef<number>(0);
@@ -74,7 +80,7 @@ export default function VortexCanvas({
         const imageData = ctx.getImageData(0, 0, width, height);
 
         // 2. Procesar frame Wasm SIMD (Soberanía / Zero-Copy Bridge)
-        engine.processFrame(imageData, grain, scanlines);
+        engine.processFrame(imageData, grain, scanlines, brightness, contrast, saturation);
 
         // 3. Pintar resultado
         ctx.putImageData(imageData, 0, 0);
@@ -88,7 +94,7 @@ export default function VortexCanvas({
 
     rafRef.current = requestAnimationFrame(render);
     return () => cancelAnimationFrame(rafRef.current);
-  }, [videoRef, width, height, grain, scanlines, engineReady]);
+  }, [videoRef, width, height, grain, scanlines, brightness, contrast, saturation, engineReady]);
 
   return (
     <div className="absolute inset-0 w-full h-full">

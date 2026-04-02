@@ -246,13 +246,27 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
 
     undo: useCallback(() => {
       if (engineRef.current) {
-        engineRef.current.undo();
+        const str = engineRef.current.undo();
+        if (str) {
+          try {
+            const payload = JSON.parse(str);
+            isInternalChange.current = true;
+            dispatch({ type: "UNDO", payload });
+          } catch(e) { console.error("Undo decode error:", e); }
+        }
       }
     }, []),
 
     redo: useCallback(() => {
       if (engineRef.current) {
-        engineRef.current.redo();
+        const str = engineRef.current.redo();
+        if (str) {
+          try {
+            const payload = JSON.parse(str);
+            isInternalChange.current = true;
+            dispatch({ type: "REDO", payload });
+          } catch(e) { console.error("Redo decode error:", e); }
+        }
       }
     }, [])
   };

@@ -1,4 +1,4 @@
-# Content Studio ROADMAP `v1.3.0`
+# Content Studio ROADMAP `v1.4.0`
 
 Visión futura y objetivos estratégicos para el **Content Studio**.
 
@@ -8,7 +8,8 @@ Visión futura y objetivos estratégicos para el **Content Studio**.
 - [x] **SIMD Optimization**: `simd128` Film Grain + Scanlines. ✅ v1.1.0
 - [x] **Zero-Copy Pipeline**: `vortex_alloc/free` + `processFrame`. ✅ v1.1.0
 - [x] **Main-Thread Engine Validation**: WASM directo superando performance esperada (<5ms). Worker descartado por inestabilidad externa. ✅ v1.3.0
-- [x] **Advanced Film Emulation**: Grain dinámico por luminancia BT.601. ✅ v1.2.0
+- [x] **Total Domain Architecture**: Procesamiento de Color Grading in-place en Wasm SIMD. SVG abolido. ✅ v1.4.0
+- [x] **Advanced Film Emulation**: Grain dinámico por luminancia BT.601 + History State via Wasm. ✅ v1.4.0
 - [x] **Benchmarking**: `frameMs` en tiempo real en badge UI. ✅ v1.2.0
 
 ### Hito 2: Edición No-Lineal (Timeline Expansion)

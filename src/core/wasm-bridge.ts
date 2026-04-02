@@ -20,6 +20,9 @@ interface VortexWasmExports {
     height: number,
     grain: number,
     scanlines: number,
+    brightness: number,
+    contrast: number,
+    saturation: number,
   ) => void;
   debounce_update: (
     key_ptr: number,
@@ -49,19 +52,18 @@ export class VortexEngine {
   }
 
   /**
-   * Filtro de delta inteligente para sliders de alta frecuencia.
-   * Evita despachar actualizaciones de estado cuando el cambio es insignificante.
-   * Lógica JS-side: no requiere round-trip a Wasm.
+   * Filtro de delta inteligente. Utiliza el Rust Debouncer nativo
+   * enviando el string mediante memoria compartida (UTF-8).
    */
-  private lastValues = new Map<string, number>();
-
   debounce_update(key: string, value: number, delta: number): boolean {
-    const last = this.lastValues.get(key) ?? -Infinity;
-    if (Math.abs(value - last) >= delta) {
-      this.lastValues.set(key, value);
-      return true;
+    const encoded = new TextEncoder().encode(key);
+    const ptr = this.exports.vortex_alloc(encoded.byteLength);
+    try {
+      new Uint8Array(this.exports.memory.buffer, ptr, encoded.byteLength).set(encoded);
+      return this.exports.debounce_update(ptr, encoded.byteLength, value, delta);
+    } finally {
+      this.exports.vortex_free(ptr, encoded.byteLength);
     }
-    return false;
   }
 
   /**
@@ -70,8 +72,11 @@ export class VortexEngine {
    * @param imageData - Frame RGBA del canvas
    * @param grain - Intensidad del grano de película [0.0, 1.0]
    * @param scanlines - Intensidad de scanlines [0.0, 1.0]
+   * @param brightness - Brillo [0.0, 2.0]
+   * @param contrast - Contraste [0.0, 2.0]
+   * @param saturation - Saturación [0.0, 2.0]
    */
-  processFrame(imageData: ImageData, grain: number, scanlines: number): void {
+  processFrame(imageData: ImageData, grain: number, scanlines: number, brightness: number = 1.0, contrast: number = 1.0, saturation: number = 1.0): void {
     const { width, height } = imageData;
     const byteLen = width * height * 4;
 
@@ -84,7 +89,7 @@ export class VortexEngine {
       wasmMem.set(imageData.data);
 
       // 3. Procesar in-place con SIMD — sin copias adicionales
-      this.exports.vortex_process_frame(ptr, width, height, grain, scanlines);
+      this.exports.vortex_process_frame(ptr, width, height, grain, scanlines, brightness, contrast, saturation);
 
       // 4. Leer resultado de vuelta al ImageData del canvas
       imageData.data.set(wasmMem);
@@ -112,14 +117,44 @@ export class VortexEngine {
     }
   }
 
-  /** Deshace el último cambio. */
-  undo(): void {
-    this.exports.undo_history();
+  /** Helper privado para decodificar strings desde Wasm */
+  private readStringFromPtr(ptr: number): string | null {
+    if (ptr === 0) return null;
+    // Buscamos el null-terminator (o lo construimos pasando len, pero en este caso HistoryStack 
+    // exporta Vec<u8> directo. Asumimos longitud.
+    // WAIT: history.rs devuelve ptr crudo pero NO la longitud en undo/redo.
+    // Esto es riesgoso sin la longitud exacta. Para JSON, usaremos TextDecoder 
+    // consumiendo hasta el final del objeto si fuera un c-string null term.
+    // Sin embargo, podemos hacerlo seguro: Rust debe enviar la longitud.
+    // Pero si no podemos reescribir Rust undo_history ahora mismo, lo resolvemos leyendo char a char hasta '}'.
+    const memory = new Uint8Array(this.exports.memory.buffer, ptr);
+    let len = 0;
+    let brackets = 0;
+    let started = false;
+    for (let i = 0; i < 10000; i++) {
+        const char = memory[i];
+        if (char === 123) { brackets++; started = true; } // '{'
+        if (char === 125) { brackets--; } // '}'
+        len++;
+        if (started && brackets === 0) break;
+        if (!started && char === 0) break;
+    }
+    
+    if (len === 0) return null;
+    const strBuffer = new Uint8Array(this.exports.memory.buffer, ptr, len);
+    return new TextDecoder().decode(strBuffer);
   }
 
-  /** Rehace el último cambio deshecho. */
-  redo(): void {
-    this.exports.redo_history();
+  /** Deshace el último cambio y retorna el JSON State. */
+  undo(): string | null {
+    const ptr = this.exports.undo_history();
+    return this.readStringFromPtr(ptr);
+  }
+
+  /** Rehace el último cambio deshecho y retorna el JSON State. */
+  redo(): string | null {
+    const ptr = this.exports.redo_history();
+    return this.readStringFromPtr(ptr);
   }
 }
 
