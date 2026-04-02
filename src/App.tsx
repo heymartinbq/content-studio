@@ -14,7 +14,7 @@ import Timeline from "./components/Timeline";
 import FloatingEditor from "./components/FloatingEditor";
 import Debugger from "./components/Debugger";
 import { useEditor } from "./core/EditorContext";
-import { Maximize2, Minimize2, Download, Share2, Layers, Camera, Edit3 } from "lucide-react";
+import { Maximize2, Minimize2, Download, Layers, Camera, Edit3 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
 export default function App() {
@@ -50,6 +50,21 @@ export default function App() {
         if (activeLayerId && selectedLayer) {
           actions.updateLayer(activeLayerId, { locked: !selectedLayer.locked });
         }
+      }
+
+      // History controls (Undo / Redo)
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+        e.preventDefault();
+        if (e.shiftKey) {
+          actions.redo();
+        } else {
+          actions.undo();
+        }
+      }
+
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
+        e.preventDefault();
+        actions.redo();
       }
     };
 

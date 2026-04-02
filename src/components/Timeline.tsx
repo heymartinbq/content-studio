@@ -4,7 +4,7 @@
  */
 
 import React from "react";
-import { Play, Pause, SkipBack, SkipForward, Clock, Layers, Trash2, Plus, Eye, EyeOff, Lock, Unlock } from "lucide-react";
+import { Play, SkipBack, SkipForward, Clock, Layers, Trash2, Plus, Eye, EyeOff, Lock, Unlock } from "lucide-react";
 import { motion } from "motion/react";
 import { useEditor } from "../core/EditorContext";
 

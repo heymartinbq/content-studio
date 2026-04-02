@@ -5,8 +5,8 @@
 
 import React, { useState, useEffect } from "react";
 import { useEditor } from "../core/EditorContext";
-import { motion, AnimatePresence } from "motion/react";
-import { Terminal, Activity, X, ChevronRight, Hash, Clock, Database, Braces } from "lucide-react";
+import { motion } from "motion/react";
+import { Terminal, Activity, X, Hash, Clock, Database, Braces } from "lucide-react";
 
 export default function Debugger() {
   const { state, actions } = useEditor();

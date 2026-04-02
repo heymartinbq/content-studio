@@ -69,7 +69,6 @@ export default function TextOverlay({
   chromaticAberration,
   bloom,
   lightWrap,
-  textureIntensity = 0.15,
   editorialStyle,
   mixBlendMode,
   textAlign,

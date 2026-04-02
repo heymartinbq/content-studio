@@ -98,4 +98,6 @@ export type EditorAction =
   | { type: 'TOGGLE_PREVIEW'; payload?: boolean }
   | { type: 'TOGGLE_FLOATING_EDITOR'; payload?: boolean }
   | { type: 'REORDER_LAYERS'; payload: Layer[] }
+  | { type: 'UNDO'; payload: EditorConfig }
+  | { type: 'REDO'; payload: EditorConfig }
   | { type: 'CLEAR_JOURNAL' };

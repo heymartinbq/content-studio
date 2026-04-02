@@ -25,7 +25,6 @@ export default function SVGFilters({
   videoContrast = 1,
   videoSaturation = 1,
   videoHue = 0,
-  videoGamma = 1,
   videoGammaR = 1,
   videoGammaG = 1,
   videoGammaB = 1,

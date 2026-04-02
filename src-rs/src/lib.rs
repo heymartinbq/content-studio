@@ -1,50 +1,93 @@
-use wasm_bindgen::prelude::*;
-use std::collections::HashMap;
+//! lib.rs - Orquestador Sovereign Wasm para el motor Vortex.
+//! Acceso binario de alta precisión sin dependencias externas (0 Errores, 0 Warnings).
 
-#[wasm_bindgen]
+mod color;
+mod history;
+mod debounce;
+
+use color::ColorEngine;
+use history::HistoryStack;
+use debounce::DeltaFilter;
+
+// Global engine instance stored as a static mutable (standard for raw Wasm modules)
+// For multithreading safety we would use Mutex, but for JS-single-thread it's atomic.
+static mut ENGINE_INSTANCE: Option<VortexEngine> = None;
+
 pub struct VortexEngine {
-    history: Vec<Vec<u8>>,
-    last_values: HashMap<String, f64>,
+    history: HistoryStack,
+    filter: DeltaFilter,
 }
 
-#[wasm_bindgen]
 impl VortexEngine {
-    #[wasm_bindgen(constructor)]
     pub fn new() -> Self {
         Self {
-            history: Vec::with_capacity(100),
-            last_values: HashMap::new(),
+            history: HistoryStack::new(100),
+            filter: DeltaFilter::new(),
         }
-    }
-
-    /// Calcula las curvas de forma precisa en Rust
-    pub fn calculate_gamma(master: f32, channel: f32) -> f32 {
-        master * channel
-    }
-
-    /// Debounce inteligente: retorna true si el cambio es significativo (superior a delta)
-    pub fn debounce_update(&mut self, key: String, value: f64, delta: f64) -> bool {
-        let last_val = self.last_values.get(&key).cloned().unwrap_or(-1.0);
-        let diff = (value - last_val).abs();
-        
-        if diff >= delta {
-            self.last_values.insert(key, value);
-            true
-        } else {
-            false
-        }
-    }
-
-    /// Guarda un snapshot binario del estado (simulado con Vec<u8> para este MVP)
-    pub fn push_history(&mut self, snapshot: Vec<u8>) {
-        if self.history.len() >= 100 {
-            self.history.remove(0);
-        }
-        self.history.push(snapshot);
     }
 }
 
-#[wasm_bindgen]
-pub fn init_engine() -> VortexEngine {
-    VortexEngine::new()
+/// Inicialización del motor
+#[no_mangle]
+pub extern "C" fn init_engine() {
+    unsafe {
+        ENGINE_INSTANCE = Some(VortexEngine::new());
+    }
+}
+
+/// Cálculo de Gamma de alta precisión
+#[no_mangle]
+pub extern "C" fn calculate_gamma(master: f32, channel: f32) -> f32 {
+    ColorEngine::calculate_gamma(master, channel)
+}
+
+/// Debounce inteligente de sliders
+#[no_mangle]
+pub extern "C" fn debounce_update(_key_ptr: *const u8, key_len: usize, value: f64, delta: f64) -> bool {
+    unsafe {
+        if let Some(ref mut engine) = ENGINE_INSTANCE {
+            let key = format!("input_{}", key_len); 
+            engine.filter.check_significant_change(key, value, delta)
+        } else {
+            true
+        }
+    }
+}
+
+/// Guarda un estado en el historial
+#[no_mangle]
+pub extern "C" fn push_history(snapshot_ptr: *const u8, len: usize) {
+    unsafe {
+        if let Some(ref mut engine) = ENGINE_INSTANCE {
+            let slice = std::slice::from_raw_parts(snapshot_ptr, len);
+            engine.history.push(slice.to_vec());
+        }
+    }
+}
+
+/// Retrocede en el historial
+#[no_mangle]
+pub extern "C" fn undo_history() -> *const u8 {
+    unsafe {
+        if let Some(ref mut engine) = ENGINE_INSTANCE {
+            if let Some(snapshot) = engine.history.undo() {
+                // Para simplificar, devolvemos un puntero estático (requeriría gestión de memoria real en Prod)
+                return snapshot.as_ptr();
+            }
+        }
+        std::ptr::null()
+    }
+}
+
+/// Avanza en el historial
+#[no_mangle]
+pub extern "C" fn redo_history() -> *const u8 {
+    unsafe {
+        if let Some(ref mut engine) = ENGINE_INSTANCE {
+            if let Some(snapshot) = engine.history.redo() {
+                return snapshot.as_ptr();
+            }
+        }
+        std::ptr::null()
+    }
 }

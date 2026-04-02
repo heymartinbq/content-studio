@@ -1,8 +1,3 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import React, { createContext, useContext, useReducer, useEffect, useCallback, useRef } from "react";
 import { 
   EditorState, 
@@ -12,8 +7,7 @@ import {
   JournalEntry 
 } from "./types";
 import { INITIAL_CONFIG, DEFAULT_LAYER_TEMPLATE } from "./defaults";
-import { getVortexEngine } from "./wasm-bridge";
-import { VortexEngine } from "./pkg/src_rs";
+import { getVortexEngine, VortexEngine } from "./wasm-bridge";
 
 const INITIAL_STATE: EditorState = {
   config: INITIAL_CONFIG,
@@ -149,6 +143,16 @@ function editorReducer(state: EditorState, action: EditorAction): EditorState {
       };
       break;
 
+    case "UNDO":
+    case "REDO":
+      if (action.payload) {
+        newState = {
+          ...state,
+          config: action.payload as EditorConfig,
+        };
+      }
+      break;
+
     case "CLEAR_JOURNAL":
       return { ...state, journal: [] };
 
@@ -180,6 +184,8 @@ const EditorContext = createContext<{
     reorderLayers: (layers: Layer[]) => void;
     clearJournal: () => void;
     calculateGamma: (master: number, channel: number) => number;
+    undo: () => void;
+    redo: () => void;
   };
 } | null>(null);
 
@@ -187,36 +193,40 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(editorReducer, INITIAL_STATE);
   const engineRef = useRef<VortexEngine | null>(null);
   const [engineReady, setEngineReady] = React.useState(false);
+  const isInternalChange = useRef(false);
 
-  // Inicialización del motor Wasm
+  // Inicialización del motor
   useEffect(() => {
     getVortexEngine().then(engine => {
       engineRef.current = engine;
       setEngineReady(true);
+      // Guardar estado inicial
+      engine.push_history(JSON.stringify(state.config));
     });
   }, []);
 
+  // Sincronización de historial
+  useEffect(() => {
+    if (engineRef.current && !isInternalChange.current) {
+      engineRef.current.push_history(JSON.stringify(state.config));
+    }
+    isInternalChange.current = false;
+  }, [state.config]);
+
   const actions = {
     updateGlobalConfig: useCallback((payload: Partial<EditorConfig>) => {
-      // Smart Debounce en Rust para parámetros numéricos de alta frecuencia
       if (engineRef.current) {
         let shouldDispatch = true;
-        
-        // Revisar si los cambios numéricos son significativos antes de disparar el Journaling redundante
         for (const [key, value] of Object.entries(payload)) {
           if (typeof value === "number") {
             const isSignificant = engineRef.current.debounce_update(key, value, 0.005);
             if (!isSignificant) shouldDispatch = false;
           }
         }
-
         if (!shouldDispatch) {
-          // Si no es significativo para el diario, actualizamos el estado sin generarJournaling ruidoso? 
-          // Por simplicidad en este MVP, siempre despachamos para la UI, pero el motor Rust 
-          // ya está filtrando lo interno si quisiéramos.
+          // Filtrado por el motor para el diario, pero despachamos para la UI fluida
         }
       }
-      
       dispatch({ type: "UPDATE_GLOBAL_CONFIG", payload });
     }, []),
 
@@ -231,10 +241,27 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
     clearJournal: useCallback(() => dispatch({ type: "CLEAR_JOURNAL" }), []),
     
     calculateGamma: useCallback((master: number, channel: number) => {
+      return VortexEngine.calculate_gamma(master, channel);
+    }, []),
+
+    undo: useCallback(() => {
       if (engineRef.current) {
-        return VortexEngine.calculate_gamma(master, channel);
+        const snapshot = engineRef.current.undo();
+        if (snapshot) {
+          isInternalChange.current = true;
+          dispatch({ type: "UNDO", payload: JSON.parse(snapshot) });
+        }
       }
-      return master * channel;
+    }, []),
+
+    redo: useCallback(() => {
+      if (engineRef.current) {
+        const snapshot = engineRef.current.redo();
+        if (snapshot) {
+          isInternalChange.current = true;
+          dispatch({ type: "REDO", payload: JSON.parse(snapshot) });
+        }
+      }
     }, [])
   };
 

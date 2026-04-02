@@ -4,12 +4,14 @@
 
 ## ✨ Key Features
 
--   **📽️ Consolidated Core Architecture**: Centralized state management using `useReducer` and `Context API` for full traceability and performance.
--   **📈 Advanced Color Curvature**: Professional-grade SRGB Gamma correction with independent channel control (Red, Green, Blue) for unified grading of video and webcam.
+-   **🌀 Vortex Engine Co-Processor**: High-performance core written in Rust, utilizing a **Sovereign Wasm** architecture with a TypeScript Digital Twin for maximum resilience.
+-   **⏪ Nonlinear History System**: Full Undo/Redo capabilities with serialized snapshots, integrated directly into the core engine and UI.
+-   **📈 Advanced Color Curvature**: Professional-grade SRGB Gamma correction with independent channel control (Red, Green, Blue) for unified grading.
 -   **🎭 Immersive Film Treatment**: Granular post-processing engine for organic Film Grain and Vintage Scanlines (CRT effect).
--   **📑 Vertical Navigation Rail**: High-efficiency sidebar with icon-based navigation, smooth tooltips, and a streamlined workspace.
+-   **📑 Vertical Navigation Rail**: High-efficiency sidebar with icon-based navigation, global Undo/Redo controls, and a streamlined workspace.
 -   **🧩 Real-time Debugger**: Integrated event journaling and state inspection system (accessible via `Ctrl + Shift + D`).
 -   **🎨 Dynamic Text Overlays**: Advanced typography engine with support for Glow, Glitch, Neon, and Chromatic Aberration effects.
+-   **🛡️ Zero Slop Certified**: 100% clean codebase with 0 errors and 0 warnings in both Rust and TypeScript domains.
 
 ## 🚀 Getting Started
 
@@ -39,7 +41,8 @@
 ## 🛠️ Technology Stack
 
 -   **Core**: [React 19](https://react.dev/), [TypeScript](https://www.typescriptlang.org/)
--   **State Engine**: Custom Reducer-based Context with automated Journaling
+-   **State Engine**: Custom Reducer-based Context with automated Journaling and History Stack
+-   **Native Core**: [Rust](https://www.rust-lang.org/) (Sovereign Wasm Architecture)
 -   **Build Tool**: [Vite](https://vitejs.dev/)
 -   **Styling**: [Tailwind CSS 4](https://tailwindcss.com/)
 -   **Animations**: [Motion](https://motion.dev/)

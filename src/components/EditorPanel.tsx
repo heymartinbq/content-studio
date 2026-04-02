@@ -7,8 +7,9 @@ import { useState } from "react";
 import { useEditor } from "../core/EditorContext";
 import { motion, AnimatePresence } from "motion/react";
 import { 
-  Settings, Type, Video, Layers, Smartphone, Square, Monitor, 
-  ChevronLeft, MoreVertical, Plus, Sun, Contrast, Droplets, Palette, Film, Sparkles, Activity 
+  Settings, Type, Video, Layers, 
+  ChevronLeft, Sun, Contrast, Palette, Film, Sparkles, Activity,
+  Undo2, Redo2 
 } from "lucide-react";
 
 interface NavButtonProps {
@@ -19,24 +20,28 @@ interface NavButtonProps {
   active: boolean;
   color: string;
   onClick: () => void;
+  disabled?: boolean;
 }
 
-const NavButton = ({ id, icon: Icon, label, active, color, onClick }: NavButtonProps) => {
+const NavButton = ({ id, icon: Icon, label, active, color, onClick, disabled }: NavButtonProps) => {
   const [isHovered, setIsHovered] = useState(false);
 
   return (
     <div className="relative flex items-center justify-center">
       <motion.button
         id={`tab-btn-${id}`}
-        onHoverStart={() => setIsHovered(true)}
+        onHoverStart={() => !disabled && setIsHovered(true)}
         onHoverEnd={() => setIsHovered(false)}
-        whileHover={{ scale: 1.1, backgroundColor: "rgba(255,255,255,0.08)" }}
-        whileTap={{ scale: 0.9 }}
+        whileHover={!disabled ? { scale: 1.1, backgroundColor: "rgba(255,255,255,0.08)" } : {}}
+        whileTap={!disabled ? { scale: 0.9 } : {}}
         onClick={onClick}
+        disabled={disabled}
         className={`w-12 h-12 flex items-center justify-center rounded-2xl transition-all duration-300 relative ${
           active 
             ? "bg-white/10 text-white shadow-lg ring-1 ring-white/10" 
-            : "text-white/30 hover:text-white/60"
+            : disabled 
+              ? "text-white/5 cursor-not-allowed"
+              : "text-white/30 hover:text-white/60"
         }`}
       >
         <Icon size={20} className={active ? color : "text-current"} />
@@ -50,7 +55,7 @@ const NavButton = ({ id, icon: Icon, label, active, color, onClick }: NavButtonP
 
       {/* Tooltip */}
       <AnimatePresence>
-        {isHovered && (
+        {isHovered && !disabled && (
           <motion.div
             initial={{ opacity: 0, x: 10 }}
             animate={{ opacity: 1, x: 20 }}
@@ -97,33 +102,55 @@ export default function EditorPanel() {
       className="absolute top-8 right-8 bottom-8 w-[460px] bg-neutral-950/90 backdrop-blur-3xl border border-white/10 rounded-[3.5rem] text-white shadow-[0_64px_128px_-32px_rgba(0,0,0,1)] z-40 overflow-hidden flex"
     >
       {/* Vertical Navigation Rail */}
-      <div id="sidebar-nav-rail" className="w-[80px] flex flex-col items-center py-10 gap-6 bg-white/[0.02] border-r border-white/5 shrink-0">
-        <div className="flex flex-col gap-4">
-          {globalTabs.map((tab) => (
-            <NavButton
-              key={tab.id}
-              id={tab.id}
-              icon={tab.icon}
-              label={tab.label}
-              active={effectiveTab === tab.id}
-              color={tab.color}
-              onClick={() => setActiveTab(tab.id)}
-            />
-          ))}
+      <div id="sidebar-nav-rail" className="w-[80px] flex flex-col items-center py-10 bg-white/[0.02] border-r border-white/5 shrink-0">
+        <div className="flex flex-col gap-4 flex-1">
+          <div className="flex flex-col gap-4">
+            {globalTabs.map((tab) => (
+              <NavButton
+                key={tab.id}
+                id={tab.id}
+                icon={tab.icon}
+                label={tab.label}
+                active={effectiveTab === tab.id}
+                color={tab.color}
+                onClick={() => setActiveTab(tab.id)}
+              />
+            ))}
+          </div>
+
+          <div className="w-8 h-px bg-white/10 my-4 mx-auto" />
+
+          <NavButton
+            id="layers"
+            icon={Type}
+            label="Capa de Texto"
+            active={!isGlobalTab}
+            color="text-blue-500"
+            onClick={() => {
+              if (config.layers.length > 0) setActiveTab(config.layers[0].id);
+            }}
+          />
         </div>
 
-        <div className="w-8 h-px bg-white/10 my-4" />
-
-        <NavButton
-          id="layers"
-          icon={Type}
-          label="Capa de Texto"
-          active={!isGlobalTab}
-          color="text-blue-500"
-          onClick={() => {
-            if (config.layers.length > 0) setActiveTab(config.layers[0].id);
-          }}
-        />
+        {/* History Controls at Bottom */}
+        <div className="flex flex-col gap-4 pb-4">
+          <NavButton
+            id="undo"
+            icon={Undo2}
+            label="Deshacer (Ctrl+Z)"
+            active={false}
+            color="text-white"
+            onClick={actions.undo}
+          />
+          <NavButton
+            id="redo"
+            icon={Redo2}
+            label="Rehacer (Ctrl+Shift+Z)"
+            active={false}
+            color="text-white"
+            onClick={actions.redo}
+          />
+        </div>
       </div>
 
       {/* Main Content Area */}
