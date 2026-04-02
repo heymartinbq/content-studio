@@ -5,14 +5,15 @@
 ## ✨ Key Features
 
 -   **🌀 Vortex Engine (Real WASM)**: Motor de alto rendimiento escrito en Rust, compilado a `wasm32` con SIMD `v128`. Pipeline Zero-Copy: `vortex_alloc/free` gestiona buffers directamente en el heap Wasm.
--   **🎞️ VortexCanvas SIMD**: Componente `<canvas>` que procesa cada frame via `requestAnimationFrame` aplicando Film Grain y Scanlines acelerados por hardware.
+-   **🎞️ VortexWorker (Multi-Thread)**: WebWorker dedicado procesa frames fuera del hilo principal via `Transferable` zero-copy — garantiza 60fps estables en UI.
+-   **🎬 Film Grain Dinámico**: Luminancia perceptual BT.601 determina la intensidad del grano por pixel — más grano en sombras, comportamiento auténtico de film fotoquímico.
+-   **⏱️ Benchmarking en Tiempo Real**: Badge `vortex-engine-badge` muestra latencia `frameMs` de cada frame procesado por el motor Rust.
 -   **⏪ Nonlinear History System**: Full Undo/Redo capabilities with serialized snapshots, integrated directly into the core engine and UI.
 -   **📈 Advanced Color Curvature**: Professional-grade SRGB Gamma correction with independent channel control (Red, Green, Blue) for unified grading.
--   **🎭 Immersive Film Treatment**: Film Grain y Scanlines procesados en tiempo real por el motor Rust/Wasm SIMD — sin CSS, sin aproximaciones.
 -   **📑 Vertical Navigation Rail**: High-efficiency sidebar with icon-based navigation, global Undo/Redo controls, and a streamlined workspace.
 -   **🧩 Real-time Debugger**: Integrated event journaling and state inspection system (accessible via `Ctrl + Shift + D`).
 -   **🎨 Dynamic Text Overlays**: Advanced typography engine with support for Glow, Glitch, Neon, and Chromatic Aberration effects.
--   **🛡️ Zero Slop Certified v1.1.0**: 0 errores, 0 warnings. Axioma Zero-Dead-Code activo: ningún código sin uso en producción.
+-   **🛡️ Zero Slop Certified v1.2.0**: 0 errores, 0 warnings. Axioma Zero-Dead-Code activo. Hito 1 del ROADMAP completado al 100%.
 
 ## 🚀 Getting Started
 

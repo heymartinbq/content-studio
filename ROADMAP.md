@@ -4,15 +4,16 @@ Visión futura y objetivos estratégicos para el **Content Studio**.
 
 ## 🎯 Hitos Principales
 
-### Hito 1: Motor Vortex v1.5 (Próximo)
-- [x] **SIMD Optimization**: Aceleración por hardware via `simd128` para Film Grain y Scanlines en tiempo real. ✅ COMPLETADO v1.1.0
-- [x] **Zero-Copy Pipeline**: `vortex_alloc/free` + `processFrame` integrado al `requestAnimationFrame`. ✅ COMPLETADO v1.1.0
-- [ ] **Multi-Threaded Rendering**: `WebWorkers` con Wasm para procesamiento de filtros en paralelo.
-- [ ] **Advanced Film Emulation**: Granulación dinámica basada en luminancia del frame.
+### Hito 1: Motor Vortex v1.5 ✅ COMPLETADO
+- [x] **SIMD Optimization**: `simd128` Film Grain + Scanlines. ✅ v1.1.0
+- [x] **Zero-Copy Pipeline**: `vortex_alloc/free` + `processFrame`. ✅ v1.1.0
+- [x] **Multi-Threaded Rendering**: `VortexWorker` WebWorker off-main-thread. ✅ v1.2.0
+- [x] **Advanced Film Emulation**: Grain dinámico por luminancia BT.601. ✅ v1.2.0
+- [x] **Benchmarking**: `frameMs` en tiempo real en badge UI. ✅ v1.2.0
 
 ### Hito 2: Edición No-Lineal (Timeline Expansion)
-- [ ] **Layer Blending Modes**: Soporte para Multiply, Screen, y Overlay en el Digital Twin.
-- [ ] **Keyframe Animation Engine**: Sistema de interpolación para propiedades de texto y filtros.
+- [ ] **Layer Blending Modes**: Multiply, Screen, Overlay en el pipeline.
+- [ ] **Keyframe Animation Engine**: Interpolación para propiedades de texto y filtros.
 - [ ] **Persistent State**: Sincronización del `HistoryStack` con `indexedDB`.
 
 ### Hito 3: IA & Soberanía del Dato

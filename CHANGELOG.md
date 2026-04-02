@@ -5,6 +5,21 @@ All notable changes to the **Content Studio** project will be documented in this
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-04-02
+
+### Added
+- **Grain Dinámico por Luminancia**: Film Grain auténtico basado en luma perceptual BT.601. Más grano en sombras, menos en altas luces. Hash determinístico por posición — sin RNG costoso.
+- **VortexWorker (WebWorker)**: Pipeline Vortex trasladado al hilo del worker. El hilo principal nunca se bloquea durante el procesamiento SIMD. Transferables zero-copy entre hilos.
+- **Benchmarking por Frame**: Cada frame devuelto por el worker incluye `frameMs`. Visible en el badge `vortex-engine-badge` en tiempo real.
+- **Badge UI `vortex-engine-badge`**: Indicador glassmorphism con pulse animation y latencia en ms, visible cuando el motor está activo.
+- **COOP/COEP Headers (Vite + Producción)**: `Cross-Origin-Opener-Policy` y `Cross-Origin-Embedder-Policy` configurados en `vite.config.ts` y `public/_headers` para habilitar `SharedArrayBuffer` en localhost y hosting estático OSS.
+- **`public/_headers`**: Archivo de headers para Netlify/Cloudflare Pages/GitHub Pages.
+
+### Changed
+- `video.rs`: Grain dinámico por luminancia reemplaza al grain uniforme. Compilación condicional estructural con `#[cfg(target_arch = "wasm32")]`.
+- `VortexCanvas.tsx`: Arquitectura dual-thread con Worker. Eliminado el procesamiento on-main-thread.
+- `vite.config.ts`: Headers COOP/COEP en `server` y `preview`.
+
 ## [1.1.0] - 2026-04-02
 
 ### Added

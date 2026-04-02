@@ -55,3 +55,10 @@ Para manipular o referenciar elementos de la interfaz, utiliza siempre los sigui
 - **Phi-Rank Compliance**: La jerarquía visual debe priorizar el `preview-canvas-board` como el Nexus central.
 - **Documentación Mandatoria (Husky)**: Cada commit de código DEBE incluir actualizaciones en `CHANGELOG.md`, `README.md`, `AI_ASSISTANT_RULES.md` y `ROADMAP.md`. El validador pre-commit bloqueará cualquier intento que no cumpla con esta sincronía estructural.
 - **Zero-Dead-Code (INALIENABLE)**: Está **PROHIBIDO** mantener código que no esté en uso activo en producción. No se permiten funciones, variables, imports o módulos sin uso bajo ninguna justificación. No existen `#[allow(dead_code)]`, `// TODO`, ni fallbacks no invocados. El único código válido es el que se ejecuta. Violaciones de este axioma deben ser revertidas inmediatamente.
+- **COOP/COEP Requerido**: Toda nueva funcionalidad que use `SharedArrayBuffer`, `WebWorker` con Wasm o `Atomics` DEBE validar que los headers `Cross-Origin-Opener-Policy: same-origin` y `Cross-Origin-Embedder-Policy: require-corp` estén activos. Configurar en `vite.config.ts` (dev) y `public/_headers` (producción OSS).
+
+## 🧵 Arquitectura de Hilos (v1.2.0+)
+- **Hilo Principal**: Captura de frame (`drawImage`), lógica React, UI. NUNCA procesa SIMD.
+- **VortexWorker** (`src/workers/vortex.worker.ts`): Único responsable del procesamiento SIMD Wasm. Comunicación via `Transferable` (zero-copy).
+- **DOM IDs activos del motor**: `vortex-canvas-output`, `vortex-engine-badge`.
+
