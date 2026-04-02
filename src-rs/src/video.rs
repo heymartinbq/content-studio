@@ -17,6 +17,7 @@ impl VideoProcessor {
         brightness: f32,
         contrast: f32,
         saturation: f32,
+        frame_time: f32,
     ) {
         #[cfg(target_arch = "wasm32")]
         Self::process_wasm(
@@ -28,10 +29,11 @@ impl VideoProcessor {
             brightness,
             contrast,
             saturation,
+            frame_time,
         );
 
         #[cfg(not(target_arch = "wasm32"))]
-        let _ = (ptr, len, grain_intensity, scanline_intensity, width, brightness, contrast, saturation);
+        let _ = (ptr, len, grain_intensity, scanline_intensity, width, brightness, contrast, saturation, frame_time);
     }
 
     #[cfg(target_arch = "wasm32")]
@@ -44,6 +46,7 @@ impl VideoProcessor {
         brightness: f32,
         contrast: f32,
         saturation: f32,
+        frame_time: f32,
     ) {
         // Precalcular LUTs (Look-Up Tables) para Brillo y Contraste es millones de veces
         // más rápido que calcular per-pixel en Wasm, permitiéndonos < 2ms latency target.
@@ -88,8 +91,10 @@ impl VideoProcessor {
                 let norm_luma = luma / 255.0;
                 let local_grain = grain_intensity * (1.0 - norm_luma); // Más grano en oscuros
 
-                // Hash ultra-fast PRNG nativo
+                // Hash ultra-fast PRNG nativo - Dinámico basado en el tiempo
+                let time_seed = frame_time.to_bits() % 10000;
                 let hash = (i as u32)
+                    .wrapping_add(time_seed.wrapping_mul(13))
                     .wrapping_mul(1_103_515_245)
                     .wrapping_add(12_345)
                     & 0x7FFF_FFFF;

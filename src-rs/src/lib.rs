@@ -73,10 +73,11 @@ pub extern "C" fn vortex_process_frame(
     brightness: f32,
     contrast: f32,
     saturation: f32,
+    frame_time: f32,
 ) {
     let len = (width * height * 4) as usize;
     unsafe {
-        VideoProcessor::process_frame(ptr, len, grain, scanlines, width, brightness, contrast, saturation);
+        VideoProcessor::process_frame(ptr, len, grain, scanlines, width, brightness, contrast, saturation, frame_time);
     }
 }
 

@@ -2,8 +2,10 @@
 
 All notable changes to the **Content Studio** project will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+## [1.4.1] - 2026-04-02
+### Fixed
+- **Dynamic Film Grain PRNG**: Fixed an issue where the Wasm SIMD engine generated static noise. Injected `performance.now()` across the FFI bounds to create an authentic photochemical dynamic grain that changes per frame.
+- **Invisible VideoLayer Bug**: Removed a residual CSS `url(#video-color-curves)` filter from `VideoLayer` which broke rendering completely in Chromium after SVG abolition.
 
 ## [1.4.0] - 2026-04-02
 

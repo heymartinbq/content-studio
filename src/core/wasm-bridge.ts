@@ -23,6 +23,7 @@ interface VortexWasmExports {
     brightness: number,
     contrast: number,
     saturation: number,
+    frame_time: number,
   ) => void;
   debounce_update: (
     key_ptr: number,
@@ -75,8 +76,9 @@ export class VortexEngine {
    * @param brightness - Brillo [0.0, 2.0]
    * @param contrast - Contraste [0.0, 2.0]
    * @param saturation - Saturación [0.0, 2.0]
+   * @param frameTime - Tiempo en ms (performance.now())
    */
-  processFrame(imageData: ImageData, grain: number, scanlines: number, brightness: number = 1.0, contrast: number = 1.0, saturation: number = 1.0): void {
+  processFrame(imageData: ImageData, grain: number, scanlines: number, brightness: number = 1.0, contrast: number = 1.0, saturation: number = 1.0, frameTime: number = 0): void {
     const { width, height } = imageData;
     const byteLen = width * height * 4;
 
@@ -89,7 +91,7 @@ export class VortexEngine {
       wasmMem.set(imageData.data);
 
       // 3. Procesar in-place con SIMD — sin copias adicionales
-      this.exports.vortex_process_frame(ptr, width, height, grain, scanlines, brightness, contrast, saturation);
+      this.exports.vortex_process_frame(ptr, width, height, grain, scanlines, brightness, contrast, saturation, frameTime);
 
       // 4. Leer resultado de vuelta al ImageData del canvas
       imageData.data.set(wasmMem);

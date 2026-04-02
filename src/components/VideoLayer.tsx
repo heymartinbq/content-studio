@@ -47,7 +47,7 @@ export default function VideoLayer({
         className="w-full h-full object-cover transition-all duration-500"
         style={{
           opacity: hasVortexEffects ? 0 : opacity,
-          filter: `blur(${blur}px) url(#video-color-curves)`,
+          filter: blur > 0 ? `blur(${blur}px)` : "none",
         }}
       >
         <source src={videoUrl} type="video/mp4" />
@@ -57,7 +57,7 @@ export default function VideoLayer({
       {hasVortexEffects && (
         <div
           style={{
-            filter: `blur(${blur}px) url(#video-color-curves)`,
+            filter: blur > 0 ? `blur(${blur}px)` : "none",
           }}
           className="absolute inset-0"
         >
