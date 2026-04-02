@@ -14,8 +14,6 @@ interface SVGFiltersProps {
   videoGammaR?: number;
   videoGammaG?: number;
   videoGammaB?: number;
-  immersiveGrain?: number;
-  immersiveScanlines?: number;
 }
 
 export default function SVGFilters({ 
@@ -27,9 +25,7 @@ export default function SVGFilters({
   videoHue = 0,
   videoGammaR = 1,
   videoGammaG = 1,
-  videoGammaB = 1,
-  immersiveGrain = 0.05,
-  immersiveScanlines = 0.1
+  videoGammaB = 1
 }: SVGFiltersProps) {
   return (
     <svg className="hidden" aria-hidden="true">
@@ -48,20 +44,6 @@ export default function SVGFilters({
             <feFuncB type="linear" slope={`${videoBrightness}`} intercept={`${(1 - videoContrast) / 2}`} />
           </feComponentTransfer>
           <feColorMatrix type="hueRotate" values={`${videoHue}`} />
-        </filter>
-
-        {/* Immersive Film Overlay (Grain + Scanlines) */}
-        <filter id="immersive-overlay">
-          <feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" result="noise" />
-          <feColorMatrix type="matrix" values={`0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 ${immersiveGrain} 0`} result="grain" />
-          <feFlood floodColor="black" result="black" />
-          <feTurbulence type="fractalNoise" baseFrequency="0 0.5" numOctaves="1" result="scanlinesNoise" />
-          <feColorMatrix type="matrix" values={`0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 ${immersiveScanlines} 0`} result="scanlines" />
-          <feMerge>
-            <feMergeNode in="SourceGraphic" />
-            <feMergeNode in="grain" />
-            <feMergeNode in="scanlines" />
-          </feMerge>
         </filter>
 
         {/* Subtle Noise Filter for Post-Processing */}

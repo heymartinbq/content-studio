@@ -26,7 +26,7 @@ export default function VideoLayer({
   scanlines = 0,
 }: VideoLayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const hasVortexEffects = grain > 0.001 || scanlines > 0.001;
+  const hasVortexEffects = showImmersiveOverlay;
 
   return (
     <div id="layer-video-bg" className="absolute inset-0 w-full h-full overflow-hidden">
@@ -41,7 +41,7 @@ export default function VideoLayer({
         className="w-full h-full object-cover transition-all duration-500"
         style={{
           opacity: hasVortexEffects ? 0 : opacity,
-          filter: `blur(${blur}px) url(#video-color-curves) ${showImmersiveOverlay ? "url(#immersive-overlay)" : ""}`,
+          filter: `blur(${blur}px) url(#video-color-curves)`,
         }}
       >
         <source src={videoUrl} type="video/mp4" />
@@ -51,7 +51,7 @@ export default function VideoLayer({
       {hasVortexEffects && (
         <div
           style={{
-            filter: `blur(${blur}px) url(#video-color-curves) ${showImmersiveOverlay ? "url(#immersive-overlay)" : ""}`,
+            filter: `blur(${blur}px) url(#video-color-curves)`,
           }}
           className="absolute inset-0"
         >

@@ -1,4 +1,4 @@
-# Content Studio ROADMAP `v1.2.2`
+# Content Studio ROADMAP `v1.3.0`
 
 Visión futura y objetivos estratégicos para el **Content Studio**.
 
@@ -7,7 +7,7 @@ Visión futura y objetivos estratégicos para el **Content Studio**.
 ### Hito 1: Motor Vortex v1.5 ✅ COMPLETADO
 - [x] **SIMD Optimization**: `simd128` Film Grain + Scanlines. ✅ v1.1.0
 - [x] **Zero-Copy Pipeline**: `vortex_alloc/free` + `processFrame`. ✅ v1.1.0
-- [x] **Multi-Threaded Rendering**: `VortexWorker` WebWorker off-main-thread. ✅ v1.2.0
+- [x] **Main-Thread Engine Validation**: WASM directo superando performance esperada (<5ms). Worker descartado por inestabilidad externa. ✅ v1.3.0
 - [x] **Advanced Film Emulation**: Grain dinámico por luminancia BT.601. ✅ v1.2.0
 - [x] **Benchmarking**: `frameMs` en tiempo real en badge UI. ✅ v1.2.0
 

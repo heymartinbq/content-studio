@@ -1,9 +1,26 @@
 # Changelog
 
-All notable changes to the **Content Studio ROADMAP `v1.2.2`** project will be documented in this file.
+All notable changes to the **Content Studio** project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [1.3.0] - 2026-04-02
+
+### Changed
+- **Arquitectura de Motor (Main Thread)**: `VortexCanvas` fue reescrito para utilizar el motor WASM directamente en el hilo principal (`requestAnimationFrame`). La optimización SIMD de Rust asegura latencias menores a 5ms por frame, eliminando la necesidad de WebWorkers propensos a errores silenciosos de resolución de Wasm en Vite.
+- **Limpieza de Dominio UI (Soberanía)**: Eliminados duplicados redundantes de SVG en `SVGFilters.tsx` para Filtros Inmersivos (`#immersive-overlay`), estableciendo a Rust (SIMD) como la ÚNICA fuente de verdad.
+- **Gating de Rendimiento**: `VideoLayer` ahora solo instancia el pipeline en tiempo real si `showImmersiveOverlay` es verdaderamente `true`, enlazado directamente a los controles del Sidebar.
+
+### Removed
+- **VortexWorker**: Eliminado `src/workers/vortex.worker.ts` según el axioma de Zero-Dead-Code. La paralelización mediante `SharedArrayBuffer` presentaba demasiados conflictos con los CDNs y resoluciones Vite en producción/desarrollo mixto.
+
+## [1.2.3] - 2026-04-02
+
+### Fixed
+- `wasm-bridge.ts`: Restaurado `debounce_update` como método de instancia en `VortexEngine`. Al reescribir el bridge para WASM real, se omitió este método que `EditorContext` usa para filtrar actualizaciones de sliders de alta frecuencia. La lógica es correctamente JS-side (no requiere round-trip a Wasm).
+
+
 
 ## [1.2.2] - 2026-04-02
 

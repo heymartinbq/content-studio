@@ -49,6 +49,22 @@ export class VortexEngine {
   }
 
   /**
+   * Filtro de delta inteligente para sliders de alta frecuencia.
+   * Evita despachar actualizaciones de estado cuando el cambio es insignificante.
+   * Lógica JS-side: no requiere round-trip a Wasm.
+   */
+  private lastValues = new Map<string, number>();
+
+  debounce_update(key: string, value: number, delta: number): boolean {
+    const last = this.lastValues.get(key) ?? -Infinity;
+    if (Math.abs(value - last) >= delta) {
+      this.lastValues.set(key, value);
+      return true;
+    }
+    return false;
+  }
+
+  /**
    * Procesa un frame de video in-place usando SIMD Wasm.
    * Paradigma Zero-Copy: copia ImageData → heap Wasm → procesa → copia de vuelta.
    * @param imageData - Frame RGBA del canvas

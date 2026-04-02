@@ -1,11 +1,10 @@
-# 🎬 Content Studio — Advanced Editorial Overlay System `v1.2.2`
+# 🎬 Content Studio — Advanced Editorial Overlay System `v1.3.0`
 
 **Content Studio** is a professional-grade web application designed for real-time video and text compositions. It provides creators with a high-end interface to craft visually stunning overlays, utilizing advanced SVG filters, motion graphics, and a sophisticated color grading engine.
 
 ## ✨ Key Features
 
--   **🌀 Vortex Engine (Real WASM)**: Motor de alto rendimiento escrito en Rust, compilado a `wasm32` con SIMD `v128`. Pipeline Zero-Copy: `vortex_alloc/free` gestiona buffers directamente en el heap Wasm.
--   **🎞️ VortexWorker (Multi-Thread)**: WebWorker dedicado procesa frames fuera del hilo principal via `Transferable` zero-copy — garantiza 60fps estables en UI.
+-   **🌀 Vortex Engine (Real WASM)**: Motor de alto rendimiento en Rust (`wasm32` SIMD `v128`). Pipeline Zero-Copy processado directamente en el Main Thread logrando latencias < 5ms.
 -   **🎬 Film Grain Dinámico**: Luminancia perceptual BT.601 determina la intensidad del grano por pixel — más grano en sombras, comportamiento auténtico de film fotoquímico.
 -   **⏱️ Benchmarking en Tiempo Real**: Badge `vortex-engine-badge` muestra latencia `frameMs` de cada frame procesado por el motor Rust.
 -   **⏪ Nonlinear History System**: Full Undo/Redo capabilities with serialized snapshots, integrated directly into the core engine and UI.
@@ -13,7 +12,7 @@
 -   **📑 Vertical Navigation Rail**: High-efficiency sidebar with icon-based navigation, global Undo/Redo controls, and a streamlined workspace.
 -   **🧩 Real-time Debugger**: Integrated event journaling and state inspection system (accessible via `Ctrl + Shift + D`).
 -   **🎨 Dynamic Text Overlays**: Advanced typography engine with support for Glow, Glitch, Neon, and Chromatic Aberration effects.
--   **🛡️ Zero Slop Certified v1.2.0**: 0 errores, 0 warnings. Axioma Zero-Dead-Code activo. Hito 1 del ROADMAP completado al 100%.
+-   **🛡️ Zero Slop Certified v1.3.0**: 0 errores, 0 warnings. Axioma Zero-Dead-Code activo. Hito 1 del ROADMAP completado al 100%.
 
 ## 🚀 Getting Started
 

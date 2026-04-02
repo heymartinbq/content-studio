@@ -1,4 +1,4 @@
-# AI Assistant Code Rules - Content Studio `v1.2.1`
+# AI Assistant Code Rules - Content Studio `v1.3.0`
 
 Este documento define las reglas de oro y el mapa estructural para cualquier asistente de IA que trabaje en este repositorio. Su cumplimiento es obligatorio para mantener la integridad semántica y técnica del proyecto.
 
@@ -57,8 +57,8 @@ Para manipular o referenciar elementos de la interfaz, utiliza siempre los sigui
 - **Zero-Dead-Code (INALIENABLE)**: Está **PROHIBIDO** mantener código que no esté en uso activo en producción. No se permiten funciones, variables, imports o módulos sin uso bajo ninguna justificación. No existen `#[allow(dead_code)]`, `// TODO`, ni fallbacks no invocados. El único código válido es el que se ejecuta. Violaciones de este axioma deben ser revertidas inmediatamente.
 - **COOP/COEP Requerido**: Toda nueva funcionalidad que use `SharedArrayBuffer`, `WebWorker` con Wasm o `Atomics` DEBE activar los headers: `Cross-Origin-Opener-Policy: same-origin` + `Cross-Origin-Embedder-Policy: credentialless`. **PROHIBIDO usar `require-corp`** — bloquea recursos cross-origin (videos de terceros, CDNs). `credentialless` habilita `SharedArrayBuffer` sin romper assets externos.
 
-## 🧵 Arquitectura de Hilos (v1.2.0+)
-- **Hilo Principal**: Captura de frame (`drawImage`), lógica React, UI. NUNCA procesa SIMD.
-- **VortexWorker** (`src/workers/vortex.worker.ts`): Único responsable del procesamiento SIMD Wasm. Comunicación via `Transferable` (zero-copy).
+## 🧵 Arquitectura de Procesamiento (v1.3.0+)
+- **Hilo Principal (Main Thread)**: El procesado Wasm SIMD es extremadamente eficiente (<5ms) y debe realizarse en el **Hilo Principal** dentro de `requestAnimationFrame`. Los `WebWorkers` probaron ser inestables para despliegues combinados y quedan deprecados para renderizado de frame.
+- **VortexCanvas**: Único responsable del procesamiento de frame y aplicación de shaders Wasm, capturando directamente del `video` via `drawImage` + `getImageData`.
 - **DOM IDs activos del motor**: `vortex-canvas-output`, `vortex-engine-badge`.
 

@@ -85,8 +85,6 @@ export default function App() {
         videoGammaR={actions.calculateGamma(config.videoGamma, config.videoGammaR)}
         videoGammaG={actions.calculateGamma(config.videoGamma, config.videoGammaG)}
         videoGammaB={actions.calculateGamma(config.videoGamma, config.videoGammaB)}
-        immersiveGrain={config.immersiveGrain}
-        immersiveScanlines={config.immersiveScanlines}
       />
 
       {/* Debugger Overlay */}
