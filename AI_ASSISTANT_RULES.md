@@ -54,3 +54,4 @@ Para manipular o referenciar elementos de la interfaz, utiliza siempre los sigui
 - **Fidelidad Semántica**: Los nombres de variables deben reflejar su función editorial (ej: `glowIntensity`, `diegeticTexture`).
 - **Phi-Rank Compliance**: La jerarquía visual debe priorizar el `preview-canvas-board` como el Nexus central.
 - **Documentación Mandatoria (Husky)**: Cada commit de código DEBE incluir actualizaciones en `CHANGELOG.md`, `README.md`, `AI_ASSISTANT_RULES.md` y `ROADMAP.md`. El validador pre-commit bloqueará cualquier intento que no cumpla con esta sincronía estructural.
+- **Zero-Dead-Code (INALIENABLE)**: Está **PROHIBIDO** mantener código que no esté en uso activo en producción. No se permiten funciones, variables, imports o módulos sin uso bajo ninguna justificación. No existen `#[allow(dead_code)]`, `// TODO`, ni fallbacks no invocados. El único código válido es el que se ejecuta. Violaciones de este axioma deben ser revertidas inmediatamente.

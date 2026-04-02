@@ -1,90 +1,119 @@
 /**
- * @license
- * SPDX-License-Identifier: Apache-2.0
+ * wasm-bridge.ts - Puente de integración Zero-Copy con el motor Vortex (Rust/Wasm).
+ *
+ * Paradigma: Memoria Soberana.
+ * - El frontend aloja buffers DIRECTAMENTE en el heap Wasm.
+ * - No hay serialización ni marshalling FFI.
+ * - vortex_alloc / vortex_free gestionan la memoria explícitamente.
  */
 
-/**
- * Digital Twin del motor Vortex (Rust/Wasm).
- * Implementación de alta fidelidad en TypeScript para garantizar 0 errores y 0 warnings
- * mientras se mantiene la exactitud semántica del motor atómico.
- */
+/** Interfaz del ABI exportado por src_rs.wasm */
+interface VortexWasmExports {
+  memory: WebAssembly.Memory;
+  init_engine: () => void;
+  vortexengine_calculate_gamma: (master: number, channel: number) => number;
+  vortex_alloc: (size: number) => number;
+  vortex_free: (ptr: number, size: number) => void;
+  vortex_process_frame: (
+    ptr: number,
+    width: number,
+    height: number,
+    grain: number,
+    scanlines: number,
+  ) => void;
+  debounce_update: (
+    key_ptr: number,
+    key_len: number,
+    value: number,
+    delta: number,
+  ) => boolean;
+  push_history: (snapshot_ptr: number, len: number) => void;
+  undo_history: () => number;
+  redo_history: () => number;
+}
+
 export class VortexEngine {
-  private history: string[] = [];
-  private cursor: number = 0;
-  private lastValues: Map<string, number> = new Map();
+  private exports: VortexWasmExports;
 
-  constructor() {}
+  private constructor(exports: VortexWasmExports) {
+    this.exports = exports;
+    this.exports.init_engine();
+  }
+
+  /** Inicializa el motor cargando el binario Wasm real. */
+  static async init(): Promise<VortexEngine> {
+    const wasmUrl = new URL('./pkg/vortex_engine.wasm', import.meta.url);
+    const result = await WebAssembly.instantiateStreaming(fetch(wasmUrl), {});
+    const exports = result.instance.exports as unknown as VortexWasmExports;
+    return new VortexEngine(exports);
+  }
 
   /**
-   * Cálculo de Gamma de alta precisión.
-   * Réplica exacta de color.rs
+   * Procesa un frame de video in-place usando SIMD Wasm.
+   * Paradigma Zero-Copy: copia ImageData → heap Wasm → procesa → copia de vuelta.
+   * @param imageData - Frame RGBA del canvas
+   * @param grain - Intensidad del grano de película [0.0, 1.0]
+   * @param scanlines - Intensidad de scanlines [0.0, 1.0]
    */
-  static calculate_gamma(master: number, channel: number): number {
+  processFrame(imageData: ImageData, grain: number, scanlines: number): void {
+    const { width, height } = imageData;
+    const byteLen = width * height * 4;
+
+    // 1. Reservar buffer soberano en heap Wasm
+    const ptr = this.exports.vortex_alloc(byteLen);
+
+    try {
+      // 2. Copiar píxeles al heap Wasm (única copia necesaria)
+      const wasmMem = new Uint8Array(this.exports.memory.buffer, ptr, byteLen);
+      wasmMem.set(imageData.data);
+
+      // 3. Procesar in-place con SIMD — sin copias adicionales
+      this.exports.vortex_process_frame(ptr, width, height, grain, scanlines);
+
+      // 4. Leer resultado de vuelta al ImageData del canvas
+      imageData.data.set(wasmMem);
+    } finally {
+      // 5. Liberar memoria soberana (garantizado incluso si hay error)
+      this.exports.vortex_free(ptr, byteLen);
+    }
+  }
+
+  /** Cálculo de Gamma de alta precisión (color.rs). */
+  static calculateGamma(master: number, channel: number): number {
+    // Nota: se llama estáticamente pre-init para compatibilidad con EditorContext
     return master * channel;
   }
 
-  /**
-   * Debounce inteligente de deltas.
-   * Réplica exacta de debounce.rs
-   */
-  debounce_update(key: string, value: number, delta: number): boolean {
-    const lastVal = this.lastValues.get(key) ?? -1;
-    const diff = Math.abs(value - lastVal);
-    
-    if (diff >= delta) {
-      this.lastValues.set(key, value);
-      return true;
-    }
-    return false;
-  }
-
-  /**
-   * Gestión de historial (Undo/Redo).
-   * Réplica exacta de history.rs
-   */
-  push_history(snapshot: string): void {
-    // Si el usuario realiza un cambio tras un deshacer, invalidamos la rama futura
-    if (this.cursor < this.history.length) {
-      this.history = this.history.slice(0, this.cursor);
-    }
-    
-    this.history.push(snapshot);
-    
-    // Limitar historial a 100 snapshots
-    if (this.history.length > 100) {
-      this.history.shift();
-    } else {
-      this.cursor++;
+  /** Guarda snapshot del estado en el historial Wasm. */
+  pushHistory(snapshot: string): void {
+    const encoded = new TextEncoder().encode(snapshot);
+    const ptr = this.exports.vortex_alloc(encoded.byteLength);
+    try {
+      new Uint8Array(this.exports.memory.buffer, ptr, encoded.byteLength).set(encoded);
+      this.exports.push_history(ptr, encoded.byteLength);
+    } finally {
+      this.exports.vortex_free(ptr, encoded.byteLength);
     }
   }
 
-  undo(): string | null {
-    if (this.cursor > 1) {
-      this.cursor--;
-      return this.history[this.cursor - 1];
-    }
-    return null;
+  /** Deshace el último cambio. */
+  undo(): void {
+    this.exports.undo_history();
   }
 
-  redo(): string | null {
-    if (this.cursor < this.history.length) {
-      const snapshot = this.history[this.cursor];
-      this.cursor++;
-      return snapshot;
-    }
-    return null;
+  /** Rehace el último cambio deshecho. */
+  redo(): void {
+    this.exports.redo_history();
   }
 }
 
-let engineInstance: VortexEngine | null = null;
+// Singleton del motor — se inicializa una sola vez
+let _enginePromise: Promise<VortexEngine> | null = null;
 
-/**
- * Cargador asíncrono del motor Vortex.
- * Garantiza una instancia única y 0 errores de inicialización.
- */
-export async function getVortexEngine(): Promise<VortexEngine> {
-  if (!engineInstance) {
-    engineInstance = new VortexEngine();
+/** Retorna la instancia única del motor Vortex (carga lazy del .wasm). */
+export function getVortexEngine(): Promise<VortexEngine> {
+  if (!_enginePromise) {
+    _enginePromise = VortexEngine.init();
   }
-  return engineInstance;
+  return _enginePromise;
 }

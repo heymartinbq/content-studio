@@ -4,10 +4,14 @@
 mod color;
 mod history;
 mod debounce;
+mod video;
 
 use color::ColorEngine;
 use history::HistoryStack;
 use debounce::DeltaFilter;
+use video::VideoProcessor;
+
+use std::alloc::{alloc, dealloc, Layout};
 
 // Global engine instance stored as a static mutable (standard for raw Wasm modules)
 // For multithreading safety we would use Mutex, but for JS-single-thread it's atomic.
@@ -37,8 +41,40 @@ pub extern "C" fn init_engine() {
 
 /// Cálculo de Gamma de alta precisión
 #[no_mangle]
-pub extern "C" fn calculate_gamma(master: f32, channel: f32) -> f32 {
+pub extern "C" fn vortexengine_calculate_gamma(master: f32, channel: f32) -> f32 {
     ColorEngine::calculate_gamma(master, channel)
+}
+
+// --- VIDEO ENGINE EXTENSIONS ---
+
+/// Reserva memoria en el heap de Wasm para el buffer de video.
+/// Retorna un puntero al inicio del buffer.
+#[no_mangle]
+pub extern "C" fn vortex_alloc(size: usize) -> *mut u8 {
+    let layout = Layout::from_size_align(size, 16).unwrap();
+    unsafe { alloc(layout) }
+}
+
+/// Libera la memoria reservada.
+#[no_mangle]
+pub extern "C" fn vortex_free(ptr: *mut u8, size: usize) {
+    let layout = Layout::from_size_align(size, 16).unwrap();
+    unsafe { dealloc(ptr, layout) }
+}
+
+/// Procesa un frame de video directamente en la memoria compartida.
+#[no_mangle]
+pub extern "C" fn vortex_process_frame(
+    ptr: *mut u8,
+    width: u32,
+    height: u32,
+    grain: f32,
+    scanlines: f32,
+) {
+    let len = (width * height * 4) as usize;
+    unsafe {
+        VideoProcessor::process_frame(ptr, len, grain, scanlines, width);
+    }
 }
 
 /// Debounce inteligente de sliders

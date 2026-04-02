@@ -1,19 +1,38 @@
 /**
- * @license
- * SPDX-License-Identifier: Apache-2.0
+ * VideoLayer.tsx - Capa de video con integración del motor Vortex.
+ *
+ * Cuando grain > 0 o scanlines > 0, el frame es capturado y procesado
+ * por VortexCanvas (Rust/Wasm SIMD) en tiempo real.
  */
+
+import { useRef } from "react";
+import VortexCanvas from "./VortexCanvas";
 
 interface VideoLayerProps {
   videoUrl: string;
   opacity: number;
   blur: number;
   showImmersiveOverlay?: boolean;
+  grain?: number;
+  scanlines?: number;
 }
 
-export default function VideoLayer({ videoUrl, opacity, blur, showImmersiveOverlay = false }: VideoLayerProps) {
+export default function VideoLayer({
+  videoUrl,
+  opacity,
+  blur,
+  showImmersiveOverlay = false,
+  grain = 0,
+  scanlines = 0,
+}: VideoLayerProps) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const hasVortexEffects = grain > 0.001 || scanlines > 0.001;
+
   return (
     <div id="layer-video-bg" className="absolute inset-0 w-full h-full overflow-hidden">
+      {/* Video fuente — visible solo si no hay efectos Vortex activos */}
       <video
+        ref={videoRef}
         key={videoUrl}
         autoPlay
         loop
@@ -21,13 +40,31 @@ export default function VideoLayer({ videoUrl, opacity, blur, showImmersiveOverl
         playsInline
         className="w-full h-full object-cover transition-all duration-500"
         style={{
-          opacity: opacity,
+          opacity: hasVortexEffects ? 0 : opacity,
           filter: `blur(${blur}px) url(#video-color-curves) ${showImmersiveOverlay ? "url(#immersive-overlay)" : ""}`,
         }}
       >
         <source src={videoUrl} type="video/mp4" />
-        Your browser does not support the video tag.
       </video>
+
+      {/* Motor Vortex: procesa frames con SIMD Rust/Wasm */}
+      {hasVortexEffects && (
+        <div
+          style={{
+            filter: `blur(${blur}px) url(#video-color-curves) ${showImmersiveOverlay ? "url(#immersive-overlay)" : ""}`,
+          }}
+          className="absolute inset-0"
+        >
+          <VortexCanvas
+            videoRef={videoRef}
+            width={1920}
+            height={1080}
+            grain={grain}
+            scanlines={scanlines}
+            opacity={opacity}
+          />
+        </div>
+      )}
     </div>
   );
 }

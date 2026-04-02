@@ -201,14 +201,14 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
       engineRef.current = engine;
       setEngineReady(true);
       // Guardar estado inicial
-      engine.push_history(JSON.stringify(state.config));
+      engine.pushHistory(JSON.stringify(state.config));
     });
   }, []);
 
   // Sincronización de historial
   useEffect(() => {
     if (engineRef.current && !isInternalChange.current) {
-      engineRef.current.push_history(JSON.stringify(state.config));
+      engineRef.current.pushHistory(JSON.stringify(state.config));
     }
     isInternalChange.current = false;
   }, [state.config]);
@@ -241,26 +241,18 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
     clearJournal: useCallback(() => dispatch({ type: "CLEAR_JOURNAL" }), []),
     
     calculateGamma: useCallback((master: number, channel: number) => {
-      return VortexEngine.calculate_gamma(master, channel);
+      return VortexEngine.calculateGamma(master, channel);
     }, []),
 
     undo: useCallback(() => {
       if (engineRef.current) {
-        const snapshot = engineRef.current.undo();
-        if (snapshot) {
-          isInternalChange.current = true;
-          dispatch({ type: "UNDO", payload: JSON.parse(snapshot) });
-        }
+        engineRef.current.undo();
       }
     }, []),
 
     redo: useCallback(() => {
       if (engineRef.current) {
-        const snapshot = engineRef.current.redo();
-        if (snapshot) {
-          isInternalChange.current = true;
-          dispatch({ type: "REDO", payload: JSON.parse(snapshot) });
-        }
+        engineRef.current.redo();
       }
     }, [])
   };

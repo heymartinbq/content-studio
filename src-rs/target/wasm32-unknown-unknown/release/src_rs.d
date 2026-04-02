@@ -1,0 +1,1 @@
+C:\lab\content-studio\src-rs\target\wasm32-unknown-unknown\release\src_rs.wasm: C:\lab\content-studio\src-rs\src\color.rs C:\lab\content-studio\src-rs\src\debounce.rs C:\lab\content-studio\src-rs\src\history.rs C:\lab\content-studio\src-rs\src\lib.rs C:\lab\content-studio\src-rs\src\video.rs

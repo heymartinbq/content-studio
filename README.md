@@ -4,14 +4,15 @@
 
 ## ✨ Key Features
 
--   **🌀 Vortex Engine Co-Processor**: High-performance core written in Rust, utilizing a **Sovereign Wasm** architecture with a TypeScript Digital Twin for maximum resilience.
+-   **🌀 Vortex Engine (Real WASM)**: Motor de alto rendimiento escrito en Rust, compilado a `wasm32` con SIMD `v128`. Pipeline Zero-Copy: `vortex_alloc/free` gestiona buffers directamente en el heap Wasm.
+-   **🎞️ VortexCanvas SIMD**: Componente `<canvas>` que procesa cada frame via `requestAnimationFrame` aplicando Film Grain y Scanlines acelerados por hardware.
 -   **⏪ Nonlinear History System**: Full Undo/Redo capabilities with serialized snapshots, integrated directly into the core engine and UI.
 -   **📈 Advanced Color Curvature**: Professional-grade SRGB Gamma correction with independent channel control (Red, Green, Blue) for unified grading.
--   **🎭 Immersive Film Treatment**: Granular post-processing engine for organic Film Grain and Vintage Scanlines (CRT effect).
+-   **🎭 Immersive Film Treatment**: Film Grain y Scanlines procesados en tiempo real por el motor Rust/Wasm SIMD — sin CSS, sin aproximaciones.
 -   **📑 Vertical Navigation Rail**: High-efficiency sidebar with icon-based navigation, global Undo/Redo controls, and a streamlined workspace.
 -   **🧩 Real-time Debugger**: Integrated event journaling and state inspection system (accessible via `Ctrl + Shift + D`).
 -   **🎨 Dynamic Text Overlays**: Advanced typography engine with support for Glow, Glitch, Neon, and Chromatic Aberration effects.
--   **🛡️ Zero Slop Certified**: 100% clean codebase with 0 errors and 0 warnings in both Rust and TypeScript domains.
+-   **🛡️ Zero Slop Certified v1.1.0**: 0 errores, 0 warnings. Axioma Zero-Dead-Code activo: ningún código sin uso en producción.
 
 ## 🚀 Getting Started
 

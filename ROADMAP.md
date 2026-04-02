@@ -5,9 +5,10 @@ Visión futura y objetivos estratégicos para el **Content Studio**.
 ## 🎯 Hitos Principales
 
 ### Hito 1: Motor Vortex v1.5 (Próximo)
-- [ ] **Multi-Threaded Rendering**: Uso de `WebWorkers` con Wasm para procesamiento de filtros en paralelo.
-- [ ] **Advanced Film Emulation**: Implementación de granulación dinámica basada en luminancia.
-- [ ] **SIMD Optimization**: Aceleración por hardware para operaciones de color en Rust.
+- [x] **SIMD Optimization**: Aceleración por hardware via `simd128` para Film Grain y Scanlines en tiempo real. ✅ COMPLETADO v1.1.0
+- [x] **Zero-Copy Pipeline**: `vortex_alloc/free` + `processFrame` integrado al `requestAnimationFrame`. ✅ COMPLETADO v1.1.0
+- [ ] **Multi-Threaded Rendering**: `WebWorkers` con Wasm para procesamiento de filtros en paralelo.
+- [ ] **Advanced Film Emulation**: Granulación dinámica basada en luminancia del frame.
 
 ### Hito 2: Edición No-Lineal (Timeline Expansion)
 - [ ] **Layer Blending Modes**: Soporte para Multiply, Screen, y Overlay en el Digital Twin.
