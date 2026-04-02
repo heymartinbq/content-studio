@@ -1,9 +1,15 @@
 # Changelog
 
-All notable changes to the **Content Studio** project will be documented in this file.
+All notable changes to the **Content Studio ROADMAP `v1.2.2`** project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [1.2.2] - 2026-04-02
+
+### Fixed
+- **COEP Header**: Cambiado `require-corp` → `credentialless` en `vite.config.ts` y `public/_headers`. `require-corp` bloqueaba videos cross-origin (mixkit.co CDN) con `ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep`. `credentialless` habilita `SharedArrayBuffer` sin bloquear assets externos.
+- **AI_ASSISTANT_RULES.md**: Axioma COOP/COEP corregido para prohibir explícitamente `require-corp` en aplicaciones OSS con assets de terceros.
 
 ## [1.2.1] - 2026-04-02
 

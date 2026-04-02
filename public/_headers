@@ -1,7 +1,3 @@
 /*
- * _headers — Netlify / GitHub Pages / Cloudflare Pages production headers.
- * Enables SharedArrayBuffer for WebWorker + Wasm multi-threading.
- */
-/*
   Cross-Origin-Opener-Policy: same-origin
-  Cross-Origin-Embedder-Policy: require-corp
+  Cross-Origin-Embedder-Policy: credentialless

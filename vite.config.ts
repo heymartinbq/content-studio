@@ -20,14 +20,14 @@ export default defineConfig(() => {
       // COOP/COEP headers: required for SharedArrayBuffer + WebWorker + Wasm threads
       headers: {
         'Cross-Origin-Opener-Policy': 'same-origin',
-        'Cross-Origin-Embedder-Policy': 'require-corp',
+        'Cross-Origin-Embedder-Policy': 'credentialless',
       },
     },
     // Production: headers for static hosting (Netlify / GitHub Pages via _headers file)
     preview: {
       headers: {
         'Cross-Origin-Opener-Policy': 'same-origin',
-        'Cross-Origin-Embedder-Policy': 'require-corp',
+        'Cross-Origin-Embedder-Policy': 'credentialless',
       },
     },
   };
