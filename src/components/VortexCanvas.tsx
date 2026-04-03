@@ -80,10 +80,12 @@ export default function VortexCanvas({
         const imageData = ctx.getImageData(0, 0, width, height);
 
         // 2. Procesar frame Wasm SIMD (Soberanía / Zero-Copy Bridge)
-        engine.processFrame(imageData, grain, scanlines, brightness, contrast, saturation, performance.now());
+        const processedData = engine.processFrame(imageData, grain, scanlines, brightness, contrast, saturation, performance.now());
 
         // 3. Pintar resultado
-        ctx.putImageData(imageData, 0, 0);
+        if (processedData) {
+          ctx.putImageData(processedData, 0, 0);
+        }
 
         const delta = performance.now() - t0;
         setFrameMs(Math.round(delta * 10) / 10);

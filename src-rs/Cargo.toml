@@ -7,8 +7,9 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-# No dependencies to ensure 0 errors/warnings on all environments
-# avoiding proc-macro expansion issues in restricted IDEs
+# Agregamos Serde para el Wasm State Governance
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
 
 [profile.release]
 opt-level = 3

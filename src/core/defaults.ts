@@ -52,7 +52,7 @@ export const INITIAL_LAYERS: Layer[] = [
 
 export const INITIAL_CONFIG: EditorConfig = {
   aspectRatio: "16/9",
-  videoUrl: "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4",
+  videoUrl: "/video_demo.mp4",
   videoOpacity: 0.8,
   videoBlur: 2,
   videoBrightness: 1,
@@ -62,7 +62,10 @@ export const INITIAL_CONFIG: EditorConfig = {
   showImmersiveOverlay: false,
   vignetteIntensity: 60,
   vignetteRadius: 20,
+  vignetteSoftness: 50,
   vignetteColor: "#000000",
+  lensDistortion: 0,
+  halationIntensity: 0.2,
   useWebcam: false,
   webcamOpacity: 100,
   webcamBlur: 0,

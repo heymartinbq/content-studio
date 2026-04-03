@@ -1,9 +1,8 @@
 import React, { useState } from "react";
 import { useEditor } from "../core/EditorContext";
 import {
-  Settings, Type, Video, Layers,
-  ChevronLeft, Sun, Contrast, Palette, Film, Sparkles, Activity,
-  Undo2, Redo2
+  Settings, Type, Video, ChevronLeft, Sun, Contrast, Palette, Film, Sparkles, Activity,
+  Undo2, Redo2, Zap
 } from "lucide-react";
 
 interface NavButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -68,9 +67,7 @@ export default function EditorPanel() {
 
   const globalTabs = [
     { id: "media", icon: Video, label: "Fondo & Webcam", color: "text-green-400" },
-    { id: "post", icon: Layers, label: "Post-Procesado", color: "text-orange-400" },
-    { id: "curves", icon: Activity, label: "Curvatura", color: "text-blue-400" },
-    { id: "immersive", icon: Film, label: "Inmersión", color: "text-purple-400" },
+    { id: "rendering", icon: Zap, label: "Renderizado Vortex", color: "text-blue-400" },
   ];
 
   const effectiveTab = activeTab || "media";
@@ -183,24 +180,25 @@ export default function EditorPanel() {
             </div>
           )}
 
-          {/* Tab: Post-Processing */}
-          {effectiveTab === "post" && (
-            <div id="tab-content-post" className="space-y-12">
-              <div id="section-color-correction" className="space-y-8">
+          {/* Tab: Rendering Master (Consolidated) */}
+          {effectiveTab === "rendering" && (
+            <div id="tab-content-rendering" className="space-y-12">
+              {/* SECTION: Color Grading */}
+              <div className="space-y-8">
                 <div className="flex items-center gap-3">
                   <Palette size={16} className="text-blue-400" />
-                  <label className="text-[10px] uppercase tracking-[0.3em] text-white/40 font-black">Master Grading</label>
+                  <label className="text-[10px] uppercase tracking-[0.3em] text-white/40 font-black">Gradación Maestra</label>
                 </div>
                 <div className="grid grid-cols-1 gap-8 bg-white/[0.02] p-8 rounded-[2.5rem] border border-white/5 shadow-2xl">
                   <div className="grid grid-cols-2 gap-10">
-                    <div id="control-video-brightness" className="space-y-4">
+                    <div className="space-y-4">
                       <div className="flex justify-between text-[9px] font-black tracking-widest text-white/20">
                         <span className="flex items-center gap-2 tracking-[0.2em]"><Sun size={12} /> BRILLO</span>
                         <span className="text-blue-400">{Math.round(config.videoBrightness * 100)}%</span>
                       </div>
                       <input type="range" min="0" max="2" step="0.01" value={config.videoBrightness} onChange={(e) => handleGlobalChange("videoBrightness", parseFloat(e.target.value))} className="w-full accent-blue-500 h-1.5 bg-white/5 rounded-full" />
                     </div>
-                    <div id="control-video-contrast" className="space-y-4">
+                    <div className="space-y-4">
                       <div className="flex justify-between text-[9px] font-black tracking-widest text-white/20">
                         <span className="flex items-center gap-2 tracking-[0.2em]"><Contrast size={12} /> CONTRASTE</span>
                         <span className="text-blue-400">{Math.round(config.videoContrast * 100)}%</span>
@@ -211,90 +209,90 @@ export default function EditorPanel() {
                 </div>
               </div>
 
-              <div id="section-post-effects" className="space-y-8 pt-10 border-t border-white/5">
-                <div className="flex items-center gap-3">
-                  <Sparkles size={16} className="text-orange-400" />
-                  <label className="text-[10px] uppercase tracking-[0.3em] text-white/40 font-black">Óptica & Sensor</label>
-                </div>
-                <div className="grid grid-cols-2 gap-10">
-                  <div id="control-vignette-intensity" className="space-y-4">
-                    <div className="flex justify-between text-[9px] font-black tracking-widest text-white/20"><span>VIÑETA</span><span className="text-orange-400">{config.vignetteIntensity}</span></div>
-                    <input type="range" min="0" max="100" value={config.vignetteIntensity} onChange={(e) => handleGlobalChange("vignetteIntensity", parseInt(e.target.value))} className="w-full accent-orange-500 h-1.5 bg-white/5 rounded-full" />
-                  </div>
-                  <div id="control-video-blur" className="space-y-4">
-                    <div className="flex justify-between text-[9px] font-black tracking-widest text-white/20"><span>LENS BLUR</span><span className="text-orange-400">{config.videoBlur}px</span></div>
-                    <input type="range" min="0" max="20" value={config.videoBlur} onChange={(e) => handleGlobalChange("videoBlur", parseInt(e.target.value))} className="w-full accent-orange-500 h-1.5 bg-white/5 rounded-full" />
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Tab: Curves */}
-          {effectiveTab === "curves" && (
-            <div id="tab-content-curves" className="space-y-12">
-              <div id="section-gamma-correction" className="space-y-8">
+              {/* SECTION: Gamma Curves */}
+              <div className="space-y-8 pt-10 border-t border-white/5">
                 <div className="flex items-center gap-3">
                   <Activity size={16} className="text-blue-400" />
-                  <label className="text-[10px] uppercase tracking-[0.3em] text-white/40 font-black">Gradación por Curva (Gamma)</label>
+                  <label className="text-[10px] uppercase tracking-[0.3em] text-white/40 font-black">Curvas Gamma</label>
                 </div>
-                <p className="text-[10px] text-white/20 uppercase font-black tracking-[0.2em] leading-relaxed max-w-[80%]">Ajuste orgánico de la respuesta tonal para simular emulsión cinematográfica.</p>
                 <div className="space-y-10 bg-white/[0.02] p-8 rounded-[3rem] border border-white/5 shadow-inner">
-                  <div id="control-gamma-master" className="space-y-4">
+                  <div className="space-y-4">
                     <div className="flex justify-between text-[9px] font-black tracking-widest text-white/20 uppercase"><span>Curva Maestra</span><span className="text-blue-400">{config.videoGamma.toFixed(2)}</span></div>
                     <input type="range" min="0.2" max="3" step="0.01" value={config.videoGamma} onChange={(e) => handleGlobalChange("videoGamma", parseFloat(e.target.value))} className="w-full accent-blue-500 h-1.5 bg-white/5 rounded-full" />
                   </div>
-                  <div className="grid grid-cols-1 gap-8 pt-8 border-t border-white/5">
-                    <div id="control-gamma-red" className="space-y-4">
-                      <div className="flex justify-between text-[9px] font-black tracking-widest text-red-500/40 uppercase"><span>Curva Rojo (S)</span><span className="text-red-400">{config.videoGammaR.toFixed(2)}</span></div>
-                      <input type="range" min="0.5" max="2" step="0.01" value={config.videoGammaR} onChange={(e) => handleGlobalChange("videoGammaR", parseFloat(e.target.value))} className="w-full accent-red-500 h-1.5 bg-white/5 rounded-full" />
+                  <div className="grid grid-cols-3 gap-6 pt-6 border-t border-white/5">
+                    <div className="space-y-3">
+                      <div className="text-[8px] font-black text-red-500/60 uppercase">Rojo</div>
+                      <input type="range" min="0.5" max="2" step="0.01" value={config.videoGammaR} onChange={(e) => handleGlobalChange("videoGammaR", parseFloat(e.target.value))} className="w-full accent-red-500 h-1 bg-white/5 rounded-full" />
                     </div>
-                    <div id="control-gamma-green" className="space-y-4">
-                      <div className="flex justify-between text-[9px] font-black tracking-widest text-green-500/40 uppercase"><span>Curva Verde (R)</span><span className="text-green-400">{config.videoGammaG.toFixed(2)}</span></div>
-                      <input type="range" min="0.5" max="2" step="0.01" value={config.videoGammaG} onChange={(e) => handleGlobalChange("videoGammaG", parseFloat(e.target.value))} className="w-full accent-green-500 h-1.5 bg-white/5 rounded-full" />
+                    <div className="space-y-3">
+                      <div className="text-[8px] font-black text-green-500/60 uppercase">Verde</div>
+                      <input type="range" min="0.5" max="2" step="0.01" value={config.videoGammaG} onChange={(e) => handleGlobalChange("videoGammaG", parseFloat(e.target.value))} className="w-full accent-green-500 h-1 bg-white/5 rounded-full" />
                     </div>
-                    <div id="control-gamma-blue" className="space-y-4">
-                      <div className="flex justify-between text-[9px] font-black tracking-widest text-blue-500/40 uppercase"><span>Curva Azul (G)</span><span className="text-blue-400">{config.videoGammaB.toFixed(2)}</span></div>
-                      <input type="range" min="0.5" max="2" step="0.01" value={config.videoGammaB} onChange={(e) => handleGlobalChange("videoGammaB", parseFloat(e.target.value))} className="w-full accent-blue-500 h-1.5 bg-white/5 rounded-full" />
+                    <div className="space-y-3">
+                      <div className="text-[8px] font-black text-blue-500/60 uppercase">Azul</div>
+                      <input type="range" min="0.5" max="2" step="0.01" value={config.videoGammaB} onChange={(e) => handleGlobalChange("videoGammaB", parseFloat(e.target.value))} className="w-full accent-blue-500 h-1 bg-white/5 rounded-full" />
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
-          )}
 
-          {/* Tab: Immersive */}
-          {effectiveTab === "immersive" && (
-            <div id="tab-content-immersive" className="space-y-12">
-              <div id="section-immersive-treatment" className="space-y-10">
+              {/* SECTION: Optics & Lens */}
+              <div className="space-y-8 pt-10 border-t border-white/5">
+                <div className="flex items-center gap-3">
+                  <Sparkles size={16} className="text-orange-400" />
+                  <label className="text-[10px] uppercase tracking-[0.3em] text-white/40 font-black">Óptica & Lente</label>
+                </div>
+                <div className="bg-white/[0.02] p-8 rounded-[2.5rem] border border-white/5 space-y-10">
+                  <div className="grid grid-cols-2 gap-10">
+                    <div className="space-y-4">
+                      <div className="flex justify-between text-[9px] font-black tracking-widest text-white/20 uppercase"><span>Intensidad Viñeta</span><span className="text-orange-400">{config.vignetteIntensity}%</span></div>
+                      <input type="range" min="0" max="100" value={config.vignetteIntensity} onChange={(e) => handleGlobalChange("vignetteIntensity", parseInt(e.target.value))} className="w-full accent-orange-500 h-1.5 bg-white/5 rounded-full" />
+                    </div>
+                    <div className="space-y-4">
+                      <div className="flex justify-between text-[9px] font-black tracking-widest text-white/20 uppercase"><span>Radio de Viñeta</span><span className="text-orange-400">{config.vignetteRadius}%</span></div>
+                      <input type="range" min="0" max="100" value={config.vignetteRadius} onChange={(e) => handleGlobalChange("vignetteRadius", parseInt(e.target.value))} className="w-full accent-orange-500 h-1.5 bg-white/5 rounded-full" />
+                    </div>
+                  </div>
+                  <div className="space-y-4 pt-6 border-t border-white/5">
+                    <div className="flex justify-between text-[9px] font-black tracking-widest text-white/20 uppercase"><span>Suavizado (Softness)</span><span className="text-orange-400">{config.vignetteSoftness}%</span></div>
+                    <input type="range" min="0" max="100" value={config.vignetteSoftness} onChange={(e) => handleGlobalChange("vignetteSoftness", parseInt(e.target.value))} className="w-full accent-orange-500 h-1.5 bg-white/5 rounded-full" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-10 pt-6 border-t border-white/5">
+                    <div className="space-y-4">
+                      <div className="flex justify-between text-[9px] font-black tracking-widest text-white/20 uppercase"><span>Distorsión Lente</span><span className="text-orange-400">{(config.lensDistortion * 100).toFixed(0)}%</span></div>
+                      <input type="range" min="-0.5" max="0.5" step="0.01" value={config.lensDistortion} onChange={(e) => handleGlobalChange("lensDistortion", parseFloat(e.target.value))} className="w-full accent-orange-500 h-1.5 bg-white/5 rounded-full" />
+                    </div>
+                    <div className="space-y-4">
+                      <div className="flex justify-between text-[9px] font-black tracking-widest text-white/20 uppercase"><span>Halación (Fringe)</span><span className="text-orange-400">{Math.round(config.halationIntensity * 100)}%</span></div>
+                      <input type="range" min="0" max="1" step="0.01" value={config.halationIntensity} onChange={(e) => handleGlobalChange("halationIntensity", parseFloat(e.target.value))} className="w-full accent-orange-500 h-1.5 bg-white/5 rounded-full" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* SECTION: Film Emulsion */}
+              <div className="space-y-8 pt-10 border-t border-white/5">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <Film size={16} className="text-purple-400" />
-                    <label className="text-[10px] uppercase tracking-[0.3em] text-white/40 font-black">Tratamiento Inmersivo</label>
+                    <label className="text-[10px] uppercase tracking-[0.3em] text-white/40 font-black">Emulsión & Inmersión</label>
                   </div>
                   <button
-                    id="control-immersive-overlay-toggle"
                     onClick={() => handleGlobalChange("showImmersiveOverlay", !config.showImmersiveOverlay)}
                     className={`w-12 h-6 rounded-full transition-all relative ${config.showImmersiveOverlay ? "bg-purple-500 shadow-[0_0_20px_rgba(168,85,247,0.4)]" : "bg-white/10"}`}
                   >
-                    <div className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow-lg transition-transform duration-300 ${config.showImmersiveOverlay ? "translate-x-6" : "translate-x-0"}`} />
+                    <div className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform duration-300 ${config.showImmersiveOverlay ? "translate-x-6" : "translate-x-0"}`} />
                   </button>
                 </div>
-
                 {config.showImmersiveOverlay && (
-                  <div className="space-y-10 animate-in fade-in slide-in-from-top-2 duration-300">
-                    <div id="control-immersive-grain" className="space-y-4">
-                      <div className="flex justify-between text-[9px] font-black tracking-widest text-white/20 uppercase">
-                        <span>Grano Fílmico</span>
-                        <span className="text-purple-400">{Math.round(config.immersiveGrain * 100)}%</span>
-                      </div>
+                  <div className="grid grid-cols-2 gap-10 bg-white/[0.02] p-8 rounded-[2.5rem] border border-white/5 animate-in fade-in slide-in-from-top-2">
+                    <div className="space-y-4">
+                      <div className="flex justify-between text-[9px] font-black tracking-widest text-white/20 uppercase"><span>Grano</span><span className="text-purple-400">{Math.round(config.immersiveGrain * 100)}%</span></div>
                       <input type="range" min="0" max="0.5" step="0.01" value={config.immersiveGrain} onChange={(e) => handleGlobalChange("immersiveGrain", parseFloat(e.target.value))} className="w-full accent-purple-500 h-1.5 bg-white/5 rounded-full" />
                     </div>
-                    <div id="control-immersive-scanlines" className="space-y-4">
-                      <div className="flex justify-between text-[9px] font-black tracking-widest text-white/20 uppercase">
-                        <span>Scanlines (CRT)</span>
-                        <span className="text-purple-400">{Math.round(config.immersiveScanlines * 100)}%</span>
-                      </div>
+                    <div className="space-y-4">
+                      <div className="flex justify-between text-[9px] font-black tracking-widest text-white/20 uppercase"><span>CRT Scan</span><span className="text-purple-400">{Math.round(config.immersiveScanlines * 100)}%</span></div>
                       <input type="range" min="0" max="0.5" step="0.01" value={config.immersiveScanlines} onChange={(e) => handleGlobalChange("immersiveScanlines", parseFloat(e.target.value))} className="w-full accent-purple-500 h-1.5 bg-white/5 rounded-full" />
                     </div>
                   </div>

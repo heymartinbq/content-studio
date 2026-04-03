@@ -172,6 +172,7 @@ const EditorContext = createContext<{
   state: EditorState;
   dispatch: React.Dispatch<EditorAction>;
   engineReady: boolean;
+  engine: VortexEngine | null;
   actions: {
     updateGlobalConfig: (updates: Partial<EditorConfig>) => void;
     selectLayer: (id: string) => void;
@@ -272,7 +273,7 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <EditorContext.Provider value={{ state, dispatch, engineReady, actions }}>
+    <EditorContext.Provider value={{ state, dispatch, engineReady, engine: engineRef.current, actions }}>
       {children}
     </EditorContext.Provider>
   );

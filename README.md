@@ -4,9 +4,11 @@
 
 ## ✨ Key Features
 
--   **🌀 Vortex Engine (Real WASM)**: Motor de alto rendimiento en Rust (`wasm32` SIMD `v128`). Pipeline Zero-Copy processado directamente en el Main Thread logrando latencias < 5ms.
--   **🎬 Film Grain Dinámico**: Luminancia perceptual BT.601 determina la intensidad del grano por pixel — más grano en sombras, comportamiento auténtico de film fotoquímico.
--   **⏱️ Benchmarking en Tiempo Real**: Badge `vortex-engine-badge` muestra latencia `frameMs` de cada frame procesado por el motor Rust.
+-   **Sovereign WebGL 2 Pipeline**: High-performance rendering with zero-waste architecture.
+-   **Vortex-Engine (Wasm/Rust)**: Spatial authority and real-time SIMD processing.
+-   **Diegetic UI Injection**: Text and overlays integrated as physical light within the cinematic pipeline.
+-   **Vortex-Optics**: Professional-grade lens distortion, film grain, scanlines, and halation.
+-   **Vortex Hit-Testing**: Native high-speed interaction engine for overlay manipulation.
 -   **⏪ Nonlinear History System**: Full Undo/Redo capabilities with serialized snapshots, integrated directly into the core engine and UI.
 -   **📈 Advanced Color Curvature**: Professional-grade SRGB Gamma correction with independent channel control (Red, Green, Blue) for unified grading.
 -   **📑 Vertical Navigation Rail**: High-efficiency sidebar with icon-based navigation, global Undo/Redo controls, and a streamlined workspace.

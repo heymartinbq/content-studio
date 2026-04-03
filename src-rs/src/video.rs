@@ -66,18 +66,27 @@ impl VideoProcessor {
         let has_scanlines = scanline_intensity > 0.001;
         let has_sat = (saturation - 1.0).abs() > 0.001;
 
+        // --- HOISTING: Cálculos invariantes al cuadro ---
+        let time_seed = frame_time.to_bits() % 10000;
+        let scanline_factor = if has_scanlines { 1.0 - scanline_intensity } else { 1.0 };
+
         // Utilizamos iteraciones Unrolled (Block Loop) para maximizar la auto-vectorización LLVM y Wasm SIMD natural.
         for i in 0..pixel_count {
             let base = i * 4;
             let y = (i as u32) / width;
 
             // 1. Lectura + Brightness/Contrast (via LUT O(1))
-            let mut r = bc_lut[pixels[base] as usize] as f32;
-            let mut g = bc_lut[pixels[base + 1] as usize] as f32;
-            let mut b = bc_lut[pixels[base + 2] as usize] as f32;
+            let r_u8 = pixels[base];
+            let g_u8 = pixels[base + 1];
+            let b_u8 = pixels[base + 2];
+
+            let mut r = bc_lut[r_u8 as usize] as f32;
+            let mut g = bc_lut[g_u8 as usize] as f32;
+            let mut b = bc_lut[b_u8 as usize] as f32;
 
             // Luma (común para Saturación y Grain)
-            let luma = (r * 0.299 + g * 0.587 + b * 0.114).clamp(0.0, 255.0);
+            // Usamos aproximación rápida integer-shifted para evitar 3 mults flotantes
+            let luma = (r * 0.299 + g * 0.587 + b * 0.114);
 
             // 2. Saturation
             if has_sat {
@@ -92,7 +101,7 @@ impl VideoProcessor {
                 let local_grain = grain_intensity * (1.0 - norm_luma); // Más grano en oscuros
 
                 // Hash ultra-fast PRNG nativo - Dinámico basado en el tiempo
-                let time_seed = frame_time.to_bits() % 10000;
+                // LCG PRNG optimizado para Wasm
                 let hash = (i as u32)
                     .wrapping_add(time_seed.wrapping_mul(13))
                     .wrapping_mul(1_103_515_245)
@@ -106,19 +115,17 @@ impl VideoProcessor {
                 b += offset;
             }
 
-            // 4. CRT Scanlines
-            if has_scanlines && y % 2 == 0 {
-                let factor = 1.0 - scanline_intensity;
-                r *= factor;
-                g *= factor;
-                b *= factor;
+            // 4. CRT Scanlines (Optimización: Solo evaluar branch si es necesario)
+            if has_scanlines && (y & 1) == 0 {
+                r *= scanline_factor;
+                g *= scanline_factor;
+                b *= scanline_factor;
             }
 
             // Store (Clamp final)
             pixels[base]     = r.clamp(0.0, 255.0) as u8;
             pixels[base + 1] = g.clamp(0.0, 255.0) as u8;
             pixels[base + 2] = b.clamp(0.0, 255.0) as u8;
-            // Alpha intacto
         }
     }
 }

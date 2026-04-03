@@ -59,7 +59,10 @@ export interface EditorConfig {
   showImmersiveOverlay: boolean;
   vignetteIntensity: number;
   vignetteRadius: number;
+  vignetteSoftness: number;
   vignetteColor: string;
+  lensDistortion: number;
+  halationIntensity: number;
   useWebcam: boolean;
   webcamOpacity: number;
   webcamBlur: number;

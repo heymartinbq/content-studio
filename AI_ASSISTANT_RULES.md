@@ -50,6 +50,9 @@ Para manipular o referenciar elementos de la interfaz, utiliza siempre los sigui
 ---
 
 ## 📐 Axiomas Arquitectónicos
+- 3. **Soberanía de Render**: Prohibido usar DOM para previsualización de capas. Todo debe pasar por el `MasterCanvas` (WebGL 2) para garantizar fidelidad Direct-to-FFmpeg.
+- 4. **Integridad Diagética**: Todo elemento de texto debe ser inyectado como textura GPU antes del post-procesado para mantener coherencia física con el video.
+- 5. **Cero Residuos**: Eliminar cualquier dependencia de hooks de React para el bucle de renderizado; usar solo `requestAnimationFrame` y refs.
 - **Soberanía del Dato**: Toda la configuración reside en el objeto `config` del `App.tsx`.
 - **Fidelidad Semántica**: Los nombres de variables deben reflejar su función editorial (ej: `glowIntensity`, `diegeticTexture`).
 - **Phi-Rank Compliance**: La jerarquía visual debe priorizar el `preview-canvas-board` como el Nexus central.

@@ -16,10 +16,14 @@ Visión futura y objetivos estratégicos para el **Content Studio**.
 ### Hito 2: Edición No-Lineal (Timeline Expansion)
 - [ ] **Layer Blending Modes**: Multiply, Screen, Overlay en el pipeline.
 - [ ] **Keyframe Animation Engine**: Interpolación para propiedades de texto y filtros.
-- [ ] **Persistent State**: Sincronización del `HistoryStack` con `indexedDB`.
-
-### Hito 3: IA & Soberanía del Dato
-- [ ] **On-Device LLM Integration**: Generación de subtítulos y efectos diegéticos mediante modelos locales.
+- [x] **Fase 3: Sovereign WebGL 2 Integration**
+  - [x] Unified Buffer Pipeline (Video + UI).
+  - [x] GPU-side Color Correction & Gamma.
+  - [x] Diegetic UI Texture Injection.
+- [x] **Fase 4: Vortex-Optics v3**
+  - [x] Universal Lens Distortion.
+  - [x] Film Halation (Red Fringe).
+- [ ] **Fase 5: Exportación Direct-to-FFmpeg** subtítulos y efectos diegéticos mediante modelos locales.
 - [ ] **Project Export**: Renderizado final `mp4` utilizando `ffmpeg.wasm`.
 
 ---

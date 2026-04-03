@@ -1,26 +1,84 @@
-import React, { useRef } from "react";
+import React, { useRef, useEffect } from "react";
 import { Type, X, GripVertical, Palette, Sliders, Layout, Plus, Trash2 } from "lucide-react";
 import { useEditor } from "../core/EditorContext";
 
 export default function FloatingEditor() {
-  const { state, actions } = useEditor();
-  const { config, activeLayerId } = state;
+  const { state, actions, engine } = useEditor();
+  const { config, activeLayerId, showFloatingEditor } = state;
   const dragRef = useRef<HTMLDivElement>(null);
+  const widgetOffsetRef = useRef<{x: number, y: number}>({ x: 0, y: 0 });
 
   const layer = config.layers.find(l => l.id === activeLayerId);
-  if (!layer) return null;
+
+  useEffect(() => {
+    if (!activeLayerId || !dragRef.current || !engine || !showFloatingEditor) return;
+    
+    let rafId: number;
+    
+    const updatePosition = () => {
+      if (!dragRef.current || !engine) return;
+      
+      let cx = engine.getLayerX(activeLayerId);
+      let cy = engine.getLayerY(activeLayerId);
+      
+      if (cx === 0 && cy === 0 && layer) {
+        cx = layer.x || 0;
+        cy = layer.y || 0;
+      }
+
+      // Offset dinámico: El widget orbita la capa para no taparla
+      const screenX = (window.innerWidth / 2) + cx + 180 + widgetOffsetRef.current.x;
+      const screenY = (window.innerHeight / 2) + cy - 100 + widgetOffsetRef.current.y;
+      
+      dragRef.current!.style.transform = `translate3d(${screenX}px, ${screenY}px, 0)`;
+      rafId = requestAnimationFrame(updatePosition);
+    };
+    
+    rafId = requestAnimationFrame(updatePosition);
+
+    return () => {
+      if (rafId) cancelAnimationFrame(rafId);
+    };
+  }, [activeLayerId, layer, engine, showFloatingEditor]);
+
+  if (!layer || !showFloatingEditor || layer.type !== "text") return null;
 
   const handleLayerChange = (key: string, value: any) => {
     actions.updateLayer(layer.id, { [key]: value });
+  };
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const initialOffsetX = widgetOffsetRef.current.x;
+    const initialOffsetY = widgetOffsetRef.current.y;
+
+    const onPointerMove = (e: PointerEvent) => {
+      widgetOffsetRef.current.x = initialOffsetX + (e.clientX - startX);
+      widgetOffsetRef.current.y = initialOffsetY + (e.clientY - startY);
+    };
+
+    const onPointerUp = () => {
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
+    };
+
+    window.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('pointerup', onPointerUp);
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
   };
 
   return (
     <div
       id="floating-editor-widget"
       ref={dragRef}
-      className="absolute top-10 left-10 z-[100] w-80 bg-neutral-900/90 backdrop-blur-3xl border border-white/10 rounded-3xl shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-bottom-4 duration-300"
+      className="absolute top-0 left-0 z-[100] w-80 bg-neutral-900/90 backdrop-blur-3xl border border-white/10 rounded-3xl shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] overflow-hidden animate-in fade-in zoom-in-95 duration-300"
+      style={{ willChange: "transform" }}
     >
-      <div className="flex items-center justify-between px-5 py-4 bg-white/5 border-b border-white/5 cursor-grab active:cursor-grabbing">
+      <div 
+        className="flex items-center justify-between px-5 py-4 bg-white/5 border-b border-white/5 cursor-grab active:cursor-grabbing"
+        onPointerDown={handlePointerDown}
+      >
         <div className="flex items-center gap-3">
           <GripVertical size={14} className="text-white/20" />
           <div className="p-1.5 bg-blue-500/20 rounded-lg">
