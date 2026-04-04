@@ -15,6 +15,7 @@ interface VortexWasmExports {
   vortex_free: (ptr: number, size: number) => void;
   vortex_init_pipeline: (width: number, height: number) => void;
   vortex_get_main_buffer_ptr: () => number;
+  vortex_get_overlay_buffer_ptr: () => number;
   vortex_process_frame_in_place: (
     width: number,
     height: number,
@@ -63,6 +64,10 @@ export class VortexEngine {
     this.exports.init_engine();
     // Default config 720p allocation to eliminate CPU getImageData lag
     this.exports.vortex_init_pipeline(1280, 720);
+  }
+
+  getMemoryBuffer(): ArrayBuffer {
+    return this.exports.memory.buffer;
   }
 
   /** Inicializa el motor cargando el binario Wasm real. */
@@ -254,6 +259,14 @@ export class VortexEngine {
    */
   blendLayers(basePtr: number, overlayPtr: number, len: number, opacity: number): void {
       this.exports.vortex_blend_layers(basePtr, overlayPtr, len, opacity);
+  }
+
+  vortex_get_main_buffer_ptr(): number {
+    return this.exports.vortex_get_main_buffer_ptr();
+  }
+
+  vortex_get_overlay_buffer_ptr(): number {
+    return this.exports.vortex_get_overlay_buffer_ptr();
   }
 
   /** Guarda snapshot del estado en el historial Wasm. */

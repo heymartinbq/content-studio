@@ -2,6 +2,17 @@
 
 All notable changes to the **Content Studio** project will be documented in this file.
 
+## [4.0.2] - 2026-04-04
+### Fixed
+- **Decoupled Render Pipeline**: Se ha eliminado la dependencia jerárquica que bloqueaba el renderizado si el video de fondo fallaba. La webcam ahora es visible incluso sin video base.
+- **Wasm Memory Stability**: Sincronización forzada de `ArrayBuffer` en cada cuadro para evitar el error `detached ArrayBuffer` tras el crecimiento dinámico del heap de Wasm.
+- **1080p Native Alignment**: Sincronización de la resolución interna del motor Vortex con el canvas principal de 1080p.
+
+## [4.0.1] - 2026-04-04
+### Fixed
+- **Sovereign Dual-Buffer Architecture**: Corregido error de visibilidad crítica en MasterCanvas mediante el uso de buffers dedicados (Main y Overlay) en Rust, eliminando el riesgo de corrupción de memoria por offsets de puntero inválidos.
+- **Unified Render Pipeline**: Sincronización optimizada del flujo de captura y mezcla SIMD para garantizar latencia cero en video y webcam simultáneamente.
+
 ## [4.0.0] - 2026-04-04
 ### Added
 - **Sovereign Vortex v4 Engine (Zero Dead Code)**: Migración total de la lógica de animación e interpolación (Lerp/Easing/Color) de JS a Rust SIMD.

@@ -44,6 +44,8 @@ export default function MasterCanvas({ config, videoRef, webcamRef }: MasterCanv
     stateRef.current = state;
     if (engine && !engineRef.current) {
         engineRef.current = engine;
+        // Sincronizar pipeline a 1080p nativo
+        (engine as any).exports.vortex_init_pipeline(1920, 1080);
     }
     if (engine && canvasRef.current && !vortexPtrRef.current) {
         vortexPtrRef.current = new VortexPtr(engine, canvasRef.current);
@@ -242,80 +244,81 @@ export default function MasterCanvas({ config, videoRef, webcamRef }: MasterCanv
 
       gl.viewport(0, 0, w, h); gl.clear(gl.COLOR_BUFFER_BIT);
       
-      const processSource = (vid: HTMLVideoElement, procRef: React.MutableRefObject<HTMLCanvasElement | null>) => {
-        if (!vid.readyState || vid.readyState < 2) return null;
-        if (!procRef.current) procRef.current = document.createElement("canvas");
-        const pc = procRef.current; 
-        if (pc.width !== vid.videoWidth) { pc.width = vid.videoWidth; pc.height = vid.videoHeight; }
-        const pctx = pc.getContext("2d", { willReadFrequently: true })!;
-        pctx.drawImage(vid, 0, 0, pc.width, pc.height);
-        const img = pctx.getImageData(0, 0, pc.width, pc.height);
-        
-        if (engine && engineReady) {
-            engine.processFrame(
-                img,
-                cfg.immersiveGrain || 0,
-                cfg.immersiveScanlines || 0,
-                cfg.videoBrightness,
-                cfg.videoContrast,
-                cfg.videoSaturation,
-                cfg.videoGamma,
-                cfg.videoGammaR,
-                cfg.videoGammaG,
-                cfg.videoGammaB,
-                cfg.chromaticAberration || 0,
-                performance.now()
-            );
-            pctx.putImageData(img, 0, 0);
-        }
-        return pc;
-      };
-
-      const processedVideo = videoRef.current ? processSource(videoRef.current, videoProcRef) : null;
+      // --- PIPELINE DE RENDERIZACIÓN SOBERANO v4.0.2 (DESACOPLADO) ---
       
-      if (processedVideo && cfg.useWebcam && webcamRef.current) {
-          const wVid = webcamRef.current;
-          if (wVid.readyState >= 2) {
-              if (!webcamProcRef.current) webcamProcRef.current = document.createElement("canvas");
-              const wc = webcamProcRef.current;
-              if (wc.width !== wVid.videoWidth) { wc.width = wVid.videoWidth; wc.height = wVid.videoHeight; }
-              const wct = wc.getContext("2d", { willReadFrequently: true })!;
-              wct.drawImage(wVid, 0, 0, wc.width, wc.height);
-              const wImg = wct.getImageData(0, 0, wc.width, wc.height);
-              
-              if (engine) {
-                  // Buffer Secundario para mezcla SIMD
-                  const size = wImg.data.byteLength;
-                  let overlayPtr = 0;
-                  // Reusar o alocar buffer de overlay
-                  // Nota: En una implementación de alta gama usaríamos un pool de buffers.
-                  // Aquí usamos vortex_alloc temporalmente por simplicidad.
-                  // Sin embargo, para no saturar memoria, preferimos una dirección fija si es posible.
-                  // Usaremos la memoria un paso después del main buffer.
-                  overlayPtr = engine.vortex_get_main_buffer_ptr() + size + 1024;
-                  
-                  const overlayMem = new Uint8Array(engine.getMemoryBuffer(), overlayPtr, size);
-                  overlayMem.set(wImg.data);
-                  
-                  engine.blendLayers(engine.vortex_get_main_buffer_ptr(), overlayPtr, size, cfg.webcamOpacity/100);
-                  
-                  const pctx = processedVideo.getContext("2d")!;
-                  const mainImg = pctx.getImageData(0, 0, processedVideo.width, processedVideo.height);
-                  mainImg.data.set(new Uint8Array(engine.getMemoryBuffer(), engine.vortex_get_main_buffer_ptr(), size));
-                  pctx.putImageData(mainImg, 0, 0);
-              }
-          }
+      if (!engine) return;
+      
+      const vVid = videoRef.current;
+      const wVid = webcamRef.current;
+      const useWc = cfg.useWebcam && wVid && wVid.readyState >= 2;
+      const hasVid = vVid && vVid.readyState >= 2;
+
+      // Importante: Refrescar la vista de memoria en cada frame para evitar detached buffers si creció el heap.
+      const memBuffer = engine.getMemoryBuffer();
+      const mainPtr = engine.vortex_get_main_buffer_ptr();
+      const overPtr = engine.vortex_get_overlay_buffer_ptr();
+      const byteLen = w * h * 4;
+
+      const mainMem = new Uint8Array(memBuffer, mainPtr, byteLen);
+      const overMem = new Uint8Array(memBuffer, overPtr, byteLen);
+
+      // 1. Preparación del Main Buffer (Video o Fondo Negro)
+      if (hasVid) {
+          if (!videoProcRef.current) videoProcRef.current = document.createElement("canvas");
+          const vc = videoProcRef.current;
+          if (vc.width !== vVid!.videoWidth) { vc.width = vVid!.videoWidth; vc.height = vVid!.videoHeight; }
+          const vctx = vc.getContext("2d", { willReadFrequently: true })!;
+          vctx.drawImage(vVid!, 0, 0, vc.width, vc.height);
+          const vImg = vctx.getImageData(0, 0, vc.width, vc.height);
+          mainMem.set(vImg.data);
+      } else {
+          // Si no hay video, limpiar buffer a negro (Authority Clear)
+          mainMem.fill(0);
+          for(let i=3; i<byteLen; i+=4) mainMem[i] = 255; // Alpha 1.0
       }
 
-      if (processedVideo) { gl.activeTexture(gl.TEXTURE0); upT(vT, processedVideo); }
-      // El canvas de webcam ya no necesita textura propia si fue mezclado en Wasm
-      gl.activeTexture(gl.TEXTURE1); upT(wT, overlayCanvas); // Placeholder o UI
-      
-      gl.activeTexture(gl.TEXTURE2); upT(uT, overlayCanvas);
+      // 2. Preparación del Overlay Buffer (Webcam)
+      if (useWc) {
+          if (!webcamProcRef.current) webcamProcRef.current = document.createElement("canvas");
+          const wc = webcamProcRef.current;
+          if (wc.width !== wVid!.videoWidth) { wc.width = wVid!.videoWidth; wc.height = wVid!.videoHeight; }
+          const wctx = wc.getContext("2d", { willReadFrequently: true })!;
+          wctx.drawImage(wVid!, 0, 0, wc.width, wc.height);
+          const wImg = wctx.getImageData(0, 0, wc.width, wc.height);
+          overMem.set(wImg.data);
+      }
+
+      // 3. Procesamiento FX (Siempre se ejecuta para aplicar Grain/Scanlines al Main)
+      (engine as any).exports.vortex_process_frame_in_place(
+          w, h,
+          cfg.immersiveGrain || 0, cfg.immersiveScanlines || 0,
+          cfg.videoBrightness, cfg.videoContrast, cfg.videoSaturation,
+          cfg.videoGamma, cfg.videoGammaR, cfg.videoGammaG, cfg.videoGammaB,
+          cfg.chromaticAberration || 0, performance.now()
+      );
+
+      // 4. Mezcla SIMD (Solo si la webcam está activa)
+      if (useWc) {
+          engine.blendLayers(mainPtr, overPtr, byteLen, cfg.webcamOpacity/100);
+      }
+
+      // 5. Salida Final: Actualizar textura de WebGL
+      // Usamos videoProcRef como canvas intermedio o creamos uno de salida si no existe
+      if (!videoProcRef.current) videoProcRef.current = document.createElement("canvas");
+      const outCanvas = videoProcRef.current;
+      if (outCanvas.width !== w) { outCanvas.width = w; outCanvas.height = h; }
+      const outCtx = outCanvas.getContext("2d")!;
+      const finalImg = outCtx.createImageData(w, h);
+      finalImg.data.set(mainMem);
+      outCtx.putImageData(finalImg, 0, 0);
+
+      gl.activeTexture(gl.TEXTURE0); upT(vT, outCanvas);
+      gl.activeTexture(gl.TEXTURE1); upT(wT, overlayCanvas); // UI Layer 1
+      gl.activeTexture(gl.TEXTURE2); upT(uT, overlayCanvas); // UI Layer 2
       
       gl.useProgram(pr);
       gl.uniform1i(loc.vid, 0); gl.uniform1i(loc.web, 1); gl.uniform1i(loc.ui, 2);
-      gl.uniform1f(loc.wOp, 0); // Ya mezclado en Wasm
+      gl.uniform1f(loc.wOp, 0); // Mezclado nativo en Rust
       gl.uniform1f(loc.dst, cfg.lensDistortion); gl.uniform1f(loc.hal, cfg.halationIntensity);
       gl.uniform1f(loc.vI, cfg.vignetteIntensity); gl.uniform1f(loc.vR, cfg.vignetteRadius); gl.uniform1f(loc.vS, cfg.vignetteSoftness);
       const c = hToR(cfg.vignetteColor); gl.uniform3f(loc.vC, c[0], c[1], c[2]);

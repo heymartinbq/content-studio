@@ -1,4 +1,4 @@
-# AI Assistant Code Rules - Content Studio `v4.0.0`
+# AI Assistant Code Rules - Content Studio `v4.0.2`
 
 Este documento define las reglas de oro y el mapa estructural para cualquier asistente de IA que trabaje en este repositorio. Su cumplimiento es obligatorio para mantener la integridad semántica y técnica del proyecto.
 
@@ -64,7 +64,8 @@ Para manipular o referenciar elementos de la interfaz, utiliza siempre los sigui
 - **Soberanía Wasm**: Wasm SIMD es el único encargado de procesar todos los filtros visuales del video nativo (BCSH: Brightness, Contrast, Saturation, Hue), erradicando las dependencias de CSS `<filter>`.
 - **Hilo Principal (Main Thread)**: El procesado Wasm SIMD es extremadamente eficiente (<5ms) y debe realizarse en el **Hilo Principal** dentro de `requestAnimationFrame`. Los `WebWorkers` probaron ser inestables para despliegues combinados y quedan deprecados para renderizado de frame.
 - **Historial In-Memory**: Rust gestiona la memoria de Retroceso (Undo/Redo), retornando strings con decodificación UTF-8 desde Buffer. El JS no debe alojar la serialización del estado histórico (Single Truth Bank).
-- **MasterCanvas (v4.0.0)**: Desposeído de lógica de animación propia. La autoridad de interpolación (f32 y Color Hex) y composición SIMD recae exclusivamente en Rust.
-- **Soberanía Zero-Dead-Code**: Queda terminantemente prohibido el uso de `#[allow(dead_code)]` o supresiones de warnings en el compilador. Toda lógica en el binario Wasm debe ser funcionalmente activa.
+- **MasterCanvas (v4.0.2)**: Pipeline desacoplado. El renderizado de webcam es independiente del video de fondo.
+- **Memoria Wasm**: Es obligatorio re-obtener la vista de `exports.memory.buffer` en cada frame para evitar errores de buffer desconectado (detached).
+- **Soberanía Zero-Dead-Code**: Queda terminantemente prohibido el uso de `#[allow(dead_code)]`.
 - **DOM IDs activos del motor**: `vortex-canvas-output`, `vortex-engine-badge`.
 

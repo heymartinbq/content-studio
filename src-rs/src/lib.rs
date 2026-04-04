@@ -24,6 +24,7 @@ pub struct VortexEngine {
     history: HistoryStack,
     filter: DeltaFilter,
     main_buffer: Vec<u8>,
+    overlay_buffer: Vec<u8>,
     spatial: SpatialEngine,
     pub state_machine: StateMachine,
 }
@@ -40,6 +41,7 @@ impl VortexEngine {
             history: HistoryStack::new(100),
             filter: DeltaFilter::new(),
             main_buffer: Vec::new(),
+            overlay_buffer: Vec::new(),
             spatial: SpatialEngine::new(),
             state_machine: StateMachine::new(),
         }
@@ -48,15 +50,24 @@ impl VortexEngine {
     pub fn init_pipeline(&mut self, width: u32, height: u32) {
         let size = (width * height * 4) as usize;
         if self.main_buffer.capacity() < size {
-            // Re-alojar de forma soberana
             self.main_buffer = vec![0u8; size];
         } else if self.main_buffer.len() < size {
             self.main_buffer.resize(size, 0);
+        }
+        
+        if self.overlay_buffer.capacity() < size {
+            self.overlay_buffer = vec![0u8; size];
+        } else if self.overlay_buffer.len() < size {
+            self.overlay_buffer.resize(size, 0);
         }
     }
 
     pub fn get_main_buffer_ptr(&mut self) -> *mut u8 {
         self.main_buffer.as_mut_ptr()
+    }
+
+    pub fn get_overlay_buffer_ptr(&mut self) -> *mut u8 {
+        self.overlay_buffer.as_mut_ptr()
     }
 }
 
@@ -115,6 +126,17 @@ pub extern "C" fn vortex_get_main_buffer_ptr() -> *mut u8 {
     unsafe {
         if let Some(ref mut engine) = ENGINE_INSTANCE {
             engine.get_main_buffer_ptr()
+        } else {
+            std::ptr::null_mut()
+        }
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn vortex_get_overlay_buffer_ptr() -> *mut u8 {
+    unsafe {
+        if let Some(ref mut engine) = ENGINE_INSTANCE {
+            engine.get_overlay_buffer_ptr()
         } else {
             std::ptr::null_mut()
         }
