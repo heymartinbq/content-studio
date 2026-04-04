@@ -7,6 +7,12 @@ pub struct DeltaFilter {
     last_values: HashMap<String, f64>,
 }
 
+impl Default for DeltaFilter {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl DeltaFilter {
     pub fn new() -> Self {
         Self {

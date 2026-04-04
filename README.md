@@ -1,4 +1,4 @@
-# 🎬 Content Studio — Advanced Editorial Overlay System `v1.9.1`
+# 🎬 Content Studio — Advanced Editorial Overlay System `v3.1.0`
 
 **Content Studio** is a professional-grade web application designed for real-time video and text compositions. It provides creators with a high-end interface to craft visually stunning overlays, utilizing advanced SVG filters, motion graphics, and a sophisticated color grading engine.
 
@@ -14,7 +14,7 @@
 -   **📑 Vertical Navigation Rail**: High-efficiency sidebar with icon-based navigation, global Undo/Redo controls, and a streamlined workspace.
 -   **🧩 Real-time Debugger**: Integrated event journaling and state inspection system (accessible via `Ctrl + Shift + D`).
 -   **🎨 Dynamic Text Overlays**: Advanced typography engine with support for Glow, Glitch, Neon, and Chromatic Aberration effects.
--   **🛡️ Total Domain Wasm Certified v1.9.1**: 0 errores, 0 warnings. Árbol de Render purgado totalmente de abstracciones lentas (Zero-Waste, sin dependencias como Framer Motion). Soporte de arrastre D&D en-engine sin depender de DOM elements. Listo para exportación unificada a FFmpeg.
+-   **🛡️ Total Domain Wasm Certified v3.1.0**: 0 errores, 0 warnings. Procesamiento dual de video y webcam mediante Wasm SIMD. Estética inmersiva de alta fidelidad con Film Grain dinámico, Scanlines CRT y RgbShift nativo con latencia <1ms.
 
 ## 🚀 Getting Started
 

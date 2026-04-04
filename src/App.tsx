@@ -141,7 +141,7 @@ export default function App() {
             filter: config.noiseIntensity > 0 ? "url(#subtle-noise)" : "none",
           }}
         >
-          <VideoLayer videoUrl={config.videoUrl} videoRef={videoRef} />
+          <VideoLayer videoUrl={config.videoUrl} videoRef={videoRef} currentTime={state.currentTime} />
           <WebcamLayer active={config.useWebcam} webcamRef={webcamRef} />
           <MasterCanvas config={config} videoRef={videoRef} webcamRef={webcamRef} />
         </div>

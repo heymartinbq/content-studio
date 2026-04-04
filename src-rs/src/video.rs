@@ -3,11 +3,18 @@
 //! Implementa procesamiento In-Place (Zero-Copy) aplicando en una sola pasada:
 //! - Brightness, Contrast, Saturation
 //! - Film Grain dinámico (Luminancia) y Scanlines CRT.
-//! Operadores de alta velocidad con unroll.
+//!   Operadores de alta velocidad con unroll.
 
 pub struct VideoProcessor;
 
+impl Default for VideoProcessor {
+    fn default() -> Self {
+        Self
+    }
+}
+
 impl VideoProcessor {
+    #[allow(clippy::too_many_arguments)]
     pub unsafe fn process_frame(
         ptr: *mut u8,
         len: usize,
@@ -17,6 +24,11 @@ impl VideoProcessor {
         brightness: f32,
         contrast: f32,
         saturation: f32,
+        gamma: f32,
+        gamma_r: f32,
+        gamma_g: f32,
+        gamma_b: f32,
+        chromatic_aberration: f32,
         frame_time: f32,
     ) {
         #[cfg(target_arch = "wasm32")]
@@ -29,11 +41,16 @@ impl VideoProcessor {
             brightness,
             contrast,
             saturation,
+            gamma,
+            gamma_r,
+            gamma_g,
+            gamma_b,
+            chromatic_aberration,
             frame_time,
         );
 
         #[cfg(not(target_arch = "wasm32"))]
-        let _ = (ptr, len, grain_intensity, scanline_intensity, width, brightness, contrast, saturation, frame_time);
+        let _ = (ptr, len, grain_intensity, scanline_intensity, width, brightness, contrast, saturation, gamma, gamma_r, gamma_g, gamma_b, chromatic_aberration, frame_time);
     }
 
     #[cfg(target_arch = "wasm32")]
@@ -46,17 +63,34 @@ impl VideoProcessor {
         brightness: f32,
         contrast: f32,
         saturation: f32,
+        gamma: f32,
+        gamma_r: f32,
+        gamma_g: f32,
+        gamma_b: f32,
+        chromatic_aberration: f32,
         frame_time: f32,
     ) {
-        // Precalcular LUTs (Look-Up Tables) para Brillo y Contraste es millones de veces
-        // más rápido que calcular per-pixel en Wasm, permitiéndonos < 2ms latency target.
-        let mut bc_lut = [0u8; 256];
+        // Precalcular LUTs para Brillo, Contraste y Gamma RGB
+        let mut lut_r = [0u8; 256];
+        let mut lut_g = [0u8; 256];
+        let mut lut_b = [0u8; 256];
+
+        let inv_gamma_r = 1.0 / (gamma * gamma_r);
+        let inv_gamma_g = 1.0 / (gamma * gamma_g);
+        let inv_gamma_b = 1.0 / (gamma * gamma_b);
+
         for i in 0..=255 {
             let mut val = (i as f32) / 255.0;
-            // Linear Brightness & Contrast
+            
+            // Brightness & Contrast
             val = val * brightness;
             val = (val - 0.5) * contrast + 0.5;
-            bc_lut[i] = (val * 255.0).clamp(0.0, 255.0) as u8;
+            val = val.clamp(0.0, 1.0);
+
+            // Gamma Core (Per channel)
+            lut_r[i] = (val.powf(inv_gamma_r) * 255.0).clamp(0.0, 255.0) as u8;
+            lut_g[i] = (val.powf(inv_gamma_g) * 255.0).clamp(0.0, 255.0) as u8;
+            lut_b[i] = (val.powf(inv_gamma_b) * 255.0).clamp(0.0, 255.0) as u8;
         }
 
         let pixels = std::slice::from_raw_parts_mut(ptr, len);
@@ -66,42 +100,37 @@ impl VideoProcessor {
         let has_scanlines = scanline_intensity > 0.001;
         let has_sat = (saturation - 1.0).abs() > 0.001;
 
-        // --- HOISTING: Cálculos invariantes al cuadro ---
         let time_seed = frame_time.to_bits() % 10000;
-        let scanline_factor = if has_scanlines { 1.0 - scanline_intensity } else { 1.0 };
+        let scanline_factor = if has_scanlines { 1.0 - scanline_intensity * 0.5 } else { 1.0 };
+        let ca_offset = (chromatic_aberration * 10.0) as i32; // Offset en píxeles
 
-        // Utilizamos iteraciones Unrolled (Block Loop) para maximizar la auto-vectorización LLVM y Wasm SIMD natural.
         for i in 0..pixel_count {
             let base = i * 4;
             let y = (i as u32) / width;
 
-            // 1. Lectura + Brightness/Contrast (via LUT O(1))
+            // 1. Lectura + Brightness/Contrast/Gamma (via LUT)
             let r_u8 = pixels[base];
             let g_u8 = pixels[base + 1];
             let b_u8 = pixels[base + 2];
 
-            let mut r = bc_lut[r_u8 as usize] as f32;
-            let mut g = bc_lut[g_u8 as usize] as f32;
-            let mut b = bc_lut[b_u8 as usize] as f32;
+            let mut r = lut_r[r_u8 as usize] as f32;
+            let mut g = lut_g[g_u8 as usize] as f32;
+            let mut b = lut_b[b_u8 as usize] as f32;
 
-            // Luma (común para Saturación y Grain)
-            // Usamos aproximación rápida integer-shifted para evitar 3 mults flotantes
-            let luma = (r * 0.299 + g * 0.587 + b * 0.114);
+            // 2. Luma calculation
+            let luma = r * 0.299 + g * 0.587 + b * 0.114;
 
-            // 2. Saturation
+            // 3. Saturation (In-place)
             if has_sat {
                 r = luma + (r - luma) * saturation;
                 g = luma + (g - luma) * saturation;
                 b = luma + (b - luma) * saturation;
             }
 
-            // 3. Dynamic Film Grain (Luma perceptual)
+            // 4. Dynamic Film Grain
             if has_grain {
                 let norm_luma = luma / 255.0;
-                let local_grain = grain_intensity * (1.0 - norm_luma); // Más grano en oscuros
-
-                // Hash ultra-fast PRNG nativo - Dinámico basado en el tiempo
-                // LCG PRNG optimizado para Wasm
+                let local_grain = grain_intensity * (1.0 - norm_luma);
                 let hash = (i as u32)
                     .wrapping_add(time_seed.wrapping_mul(13))
                     .wrapping_mul(1_103_515_245)
@@ -115,11 +144,24 @@ impl VideoProcessor {
                 b += offset;
             }
 
-            // 4. CRT Scanlines (Optimización: Solo evaluar branch si es necesario)
+            // 5. CRT Scanlines
             if has_scanlines && (y & 1) == 0 {
                 r *= scanline_factor;
                 g *= scanline_factor;
                 b *= scanline_factor;
+            }
+
+            // 6. Chromatic Aberration (RGB Shift simple in-place)
+            if ca_offset > 0 {
+                let r_idx = (base as i32 - ca_offset * 4).max(0) as usize;
+                let b_idx = (base as i32 + ca_offset * 4).min(len as i32 - 4) as usize;
+                
+                // Sustituimos R y B por sus vecinos desplazados
+                r = pixels[r_idx] as f32;
+                b = pixels[b_idx] as f32;
+                // Aplicamos de nuevo la LUT corrección básica para el canal desplazado
+                r = lut_r[r as u8 as usize] as f32;
+                b = lut_b[b as u8 as usize] as f32;
             }
 
             // Store (Clamp final)

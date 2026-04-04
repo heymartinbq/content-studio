@@ -1,4 +1,4 @@
-# AI Assistant Code Rules - Content Studio `v1.9.1`
+# AI Assistant Code Rules - Content Studio `v3.1.0`
 
 Este documento define las reglas de oro y el mapa estructural para cualquier asistente de IA que trabaje en este repositorio. Su cumplimiento es obligatorio para mantener la integridad semántica y técnica del proyecto.
 
@@ -50,7 +50,7 @@ Para manipular o referenciar elementos de la interfaz, utiliza siempre los sigui
 ---
 
 ## 📐 Axiomas Arquitectónicos
-- 3. **Soberanía de Render**: Prohibido usar DOM para previsualización de capas. Todo debe pasar por el `MasterCanvas` (WebGL 2) para garantizar fidelidad Direct-to-FFmpeg.
+- 3. **Soberanía de Render**: Prohibido usar DOM para previsualización de capas. Todo debe pasar por el `MasterCanvas` (WebGL 2 + Wasm SIMD) para garantizar fidelidad Direct-to-FFmpeg.
 - 4. **Integridad Diagética**: Todo elemento de texto debe ser inyectado como textura GPU antes del post-procesado para mantener coherencia física con el video.
 - 5. **Cero Residuos**: Eliminar cualquier dependencia de hooks de React para el bucle de renderizado; usar solo `requestAnimationFrame` y refs.
 - **Soberanía del Dato**: Toda la configuración reside en el objeto `config` del `App.tsx`.
@@ -64,6 +64,6 @@ Para manipular o referenciar elementos de la interfaz, utiliza siempre los sigui
 - **Soberanía Wasm**: Wasm SIMD es el único encargado de procesar todos los filtros visuales del video nativo (BCSH: Brightness, Contrast, Saturation, Hue), erradicando las dependencias de CSS `<filter>`.
 - **Hilo Principal (Main Thread)**: El procesado Wasm SIMD es extremadamente eficiente (<5ms) y debe realizarse en el **Hilo Principal** dentro de `requestAnimationFrame`. Los `WebWorkers` probaron ser inestables para despliegues combinados y quedan deprecados para renderizado de frame.
 - **Historial In-Memory**: Rust gestiona la memoria de Retroceso (Undo/Redo), retornando strings con decodificación UTF-8 desde Buffer. El JS no debe alojar la serialización del estado histórico (Single Truth Bank).
-- **VortexCanvas**: Único responsable del procesamiento de frame y aplicación de shaders Wasm, capturando directamente del `video` via `drawImage` + `getImageData`.
+- **MasterCanvas (v3.1.0)**: Único responsable del procesamiento de frame y aplicación de shaders Wasm, capturando simultáneamente de `video` y `webcam` mediante canvas de captura paralelos.
 - **DOM IDs activos del motor**: `vortex-canvas-output`, `vortex-engine-badge`.
 

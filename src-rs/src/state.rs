@@ -112,12 +112,20 @@ pub struct EditorConfig {
     pub immersive_grain: f32,
     #[serde(rename = "immersiveScanlines")]
     pub immersive_scanlines: f32,
+    #[serde(rename = "chromaticAberration")]
+    pub chromatic_aberration: f32,
     pub layers: Vec<Layer>,
 }
 
 pub struct StateMachine {
     pub current_state: EditorConfig,
     pub last_json: String,
+}
+
+impl Default for StateMachine {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl StateMachine {
@@ -147,6 +155,7 @@ impl StateMachine {
                 video_gamma_b: 1.0,
                 immersive_grain: 0.0,
                 immersive_scanlines: 0.0,
+                chromatic_aberration: 0.0,
                 layers: Vec::new(),
             },
             last_json: String::new(),

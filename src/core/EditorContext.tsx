@@ -15,6 +15,9 @@ const INITIAL_STATE: EditorState = {
   isPreview: false,
   showFloatingEditor: true,
   journal: [],
+  currentTime: 0,
+  isPlaying: false,
+  duration: 15, // segs por defecto
 };
 
 const MAX_JOURNAL_ENTRIES = 50;
@@ -153,6 +156,46 @@ function editorReducer(state: EditorState, action: EditorAction): EditorState {
       }
       break;
 
+    case "SET_CURRENT_TIME":
+      newState = {
+        ...state,
+        currentTime: action.payload,
+      };
+      break;
+      
+    case "TOGGLE_PLAYBACK":
+      newState = {
+        ...state,
+        isPlaying: action.payload !== undefined ? action.payload : !state.isPlaying,
+      };
+      break;
+
+    case "SET_KEYFRAME": {
+        const { layerId, property, time, value, easing } = action.payload;
+        newState = {
+            ...state,
+            config: {
+                ...state.config,
+                layers: state.config.layers.map(l => {
+                    if (l.id !== layerId) return l;
+                    const keyframes = { ...(l.keyframes || {}) };
+                    const propertyKeyframes = [...(keyframes[property] || [])];
+                    
+                    // Upsert keyframe
+                    const existingIdx = propertyKeyframes.findIndex(kf => Math.abs(kf.time - time) < 0.1);
+                    const newKeyframe = { id: `kf-${Date.now()}`, time, value, easing };
+                    
+                    if (existingIdx >= 0) propertyKeyframes[existingIdx] = newKeyframe;
+                    else propertyKeyframes.push(newKeyframe);
+                    
+                    keyframes[property] = propertyKeyframes;
+                    return { ...l, keyframes };
+                })
+            }
+        };
+        break;
+    }
+
     case "CLEAR_JOURNAL":
       return { ...state, journal: [] };
 
@@ -183,10 +226,11 @@ const EditorContext = createContext<{
     togglePreview: (val?: boolean) => void;
     toggleFloatingEditor: (val?: boolean) => void;
     reorderLayers: (layers: Layer[]) => void;
-    clearJournal: () => void;
-    calculateGamma: (master: number, channel: number) => number;
     undo: () => void;
     redo: () => void;
+    setCurrentTime: (time: number) => void;
+    setLayerKeyframe: (layerId: string, property: string, value: any, easing?: any) => void;
+    togglePlayback: (val?: boolean) => void;
   };
 } | null>(null);
 
@@ -242,7 +286,9 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
     clearJournal: useCallback(() => dispatch({ type: "CLEAR_JOURNAL" }), []),
     
     calculateGamma: useCallback((master: number, channel: number) => {
-      return VortexEngine.calculateGamma(master, channel);
+      // Gamma pre-calculado en JS para control de UI (BCSH simple)
+      // El procesamiento pesado de video ocurre en Wasm SIMD
+      return master * channel;
     }, []),
 
     undo: useCallback(() => {
@@ -269,7 +315,13 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
           } catch(e) { console.error("Redo decode error:", e); }
         }
       }
-    }, [])
+    }, []),
+    
+    setCurrentTime: useCallback((payload: number) => dispatch({ type: "SET_CURRENT_TIME", payload }), []),
+    setLayerKeyframe: useCallback((layerId: string, property: string, value: any, easing: any = 'easeInOut') => {
+        dispatch({ type: "SET_KEYFRAME", payload: { layerId, property, time: state.currentTime, value, easing } });
+    }, [state.currentTime]),
+    togglePlayback: useCallback((payload?: boolean) => dispatch({ type: "TOGGLE_PLAYBACK", payload }), []),
   };
 
   return (

@@ -40,6 +40,7 @@ export const DEFAULT_LAYER_TEMPLATE: Omit<Layer, "id" | "name"> = {
   selectionBorderWidth: 2,
   x: 0,
   y: 0,
+  keyframes: {},
 };
 
 export const INITIAL_LAYERS: Layer[] = [
@@ -76,5 +77,6 @@ export const INITIAL_CONFIG: EditorConfig = {
   videoGammaB: 1.0,
   immersiveGrain: 0.05,
   immersiveScanlines: 0.1,
+  chromaticAberration: 0.02,
   layers: INITIAL_LAYERS,
 };

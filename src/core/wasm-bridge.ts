@@ -11,7 +11,6 @@
 interface VortexWasmExports {
   memory: WebAssembly.Memory;
   init_engine: () => void;
-  vortexengine_calculate_gamma: (master: number, channel: number) => number;
   vortex_alloc: (size: number) => number;
   vortex_free: (ptr: number, size: number) => void;
   vortex_init_pipeline: (width: number, height: number) => void;
@@ -24,11 +23,18 @@ interface VortexWasmExports {
     brightness: number,
     contrast: number,
     saturation: number,
+    gamma: number,
+    gamma_r: number,
+    gamma_g: number,
+    gamma_b: number,
+    chromatic_aberration: number,
     frame_time: number,
   ) => void;
   vortex_sync_layer: (id: number, x: number, y: number, width: number, height: number, locked: boolean, visible: boolean) => void;
   vortex_hit_test: (x: number, y: number) => number;
-  vortex_drag_update: (dx: number, dy: number) => void;
+  vortex_drag_update: (mouseX: number, mouseY: number) => void;
+  vortex_release: () => number;
+  vortex_get_active_layer_id: () => number;
   vortex_get_layer_x: (id: number) => number;
   vortex_get_layer_y: (id: number) => number;
   debounce_update: (
@@ -86,7 +92,20 @@ export class VortexEngine {
    * @param saturation - Saturación [0.0, 2.0]
    * @param frameTime - Tiempo en ms (performance.now())
    */
-  processFrame(imageData: ImageData, grain: number, scanlines: number, brightness: number = 1.0, contrast: number = 1.0, saturation: number = 1.0, frameTime: number = 0): ImageData | void {
+  processFrame(
+    imageData: ImageData, 
+    grain: number, 
+    scanlines: number, 
+    brightness: number = 1.0, 
+    contrast: number = 1.0, 
+    saturation: number = 1.0, 
+    gamma: number = 1.0,
+    gamma_r: number = 1.0,
+    gamma_g: number = 1.0,
+    gamma_b: number = 1.0,
+    chromaticAberration: number = 0.0,
+    frameTime: number = 0
+  ): ImageData | void {
     const { width, height } = imageData;
     const byteLen = width * height * 4;
 
@@ -101,10 +120,23 @@ export class VortexEngine {
     wasmMem.set(imageData.data);
 
     // 4. Transformar matriz SIMD inplace (Rust procesa mutando ese puntero).
-    this.exports.vortex_process_frame_in_place(width, height, grain, scanlines, brightness, contrast, saturation, frameTime);
+    this.exports.vortex_process_frame_in_place(
+        width, 
+        height, 
+        grain, 
+        scanlines, 
+        brightness, 
+        contrast, 
+        saturation, 
+        gamma,
+        gamma_r,
+        gamma_g,
+        gamma_b,
+        chromaticAberration,
+        frameTime
+    );
 
     // 5. Devolver copiando al ImageData original
-    // (Asegurar no usar un view directo de Memory.buffer en ImageData para evitar DOMException "ArrayBufferView must not be shared" de navegadores rigurosos)
     imageData.data.set(wasmMem);
     return imageData;
   }
@@ -117,48 +149,32 @@ export class VortexEngine {
 
   // --- SPATIAL DIRECT PIPELINE ---
   
-  syncLayer(id: string, x: number, y: number, width: number, height: number, locked: boolean, visible: boolean): void {
-    const numId = this.stringToId(id);
-    this.exports.vortex_sync_layer(numId, x, y, width, height, locked, visible);
+  vortex_sync_layer(id: number, x: number, y: number, width: number, height: number, locked: boolean, visible: boolean): void {
+    this.exports.vortex_sync_layer(id, x, y, width, height, locked, visible);
   }
 
-  hitTest(mouseX: number, mouseY: number): string | null {
-    const numId = this.exports.vortex_hit_test(mouseX, mouseY);
-    return numId === 0 ? null : this.idToString(numId);
+  vortex_hit_test(mouseX: number, mouseY: number): number {
+    return this.exports.vortex_hit_test(mouseX, mouseY);
   }
 
-  dragUpdate(dx: number, dy: number): void {
-    this.exports.vortex_drag_update(dx, dy);
+  vortex_drag_update(mouseX: number, mouseY: number): void {
+    this.exports.vortex_drag_update(mouseX, mouseY);
   }
 
-  getLayerX(id: string): number {
-    return this.exports.vortex_get_layer_x(this.stringToId(id));
+  vortex_release(): number {
+    return this.exports.vortex_release();
   }
 
-  getLayerY(id: string): number {
-    return this.exports.vortex_get_layer_y(this.stringToId(id));
+  vortex_get_active_layer_id(): number {
+    return this.exports.vortex_get_active_layer_id();
   }
 
-  // Utilidad simple para bindear strings IDs a u16 para Rust
-  private stringToId(str: string): number {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-        const char = str.charCodeAt(i);
-        hash = ((hash << 5) - hash) + char;
-        hash = hash & hash; // Convert to 32bit integer
-    }
-    return Math.abs(hash) % 65535; // u16 fallback (In production we should map them exactly via a JS Dictionary)
+  vortex_get_layer_x(id: number): number {
+    return this.exports.vortex_get_layer_x(id);
   }
 
-  // Reverse mapping local fallback
-  private idMap = new Map<number, string>();
-  
-  registerIdString(str: string) {
-    this.idMap.set(this.stringToId(str), str);
-  }
-  
-  private idToString(id: number): string {
-    return this.idMap.get(id) || `layer-${id}`;
+  vortex_get_layer_y(id: number): number {
+    return this.exports.vortex_get_layer_y(id);
   }
 
   /** Guarda snapshot del estado en el historial Wasm. */

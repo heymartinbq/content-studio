@@ -2,6 +2,16 @@
 
 All notable changes to the **Content Studio** project will be documented in this file.
 
+## [3.1.0] - 2026-04-04
+### Added
+- **Inmersive SIMD Expansion**: Implementación de Aberración Cromática (RGB Shift) y Film Grain orgánico directamente en el pipeline de Rust.
+- **Webcam SIMD Integration**: La fuente de la webcam ahora es procesada por el motor Wasm, compartiendo la misma estética inmersiva que el video de fondo.
+- **MasterCanvas Unified Loop**: Refactorización del ciclo de renderizado para capturar, procesar y subir texturas de múltiples fuentes (Video/Webcam) mediante memoria soberana.
+- **Global Color Authority**: Centralización de Brillo, Contraste, Saturación y Gamma en Wasm SIMD, eliminando procesos redundantes en la GPU.
+
+### Fixed
+- **Build Toolchain Alignment**: Corrección del error de intrínsecos `clone_ref` mediante el pinning de `wasm-bindgen` a la versión `=0.2.92`.
+
 ## [3.0.0] - 2026-04-03
 ### Added
 - **Sovereign WebGL 2 Pipeline**: Transición total a un motor de renderizado WebGL 2 nativo de alto rendimiento (<1ms latencia).

@@ -1,4 +1,4 @@
-# Content Studio ROADMAP `v1.9.1`
+# Content Studio ROADMAP `v3.1.0`
 
 Visión futura y objetivos estratégicos para el **Content Studio**.
 
@@ -11,7 +11,8 @@ Visión futura y objetivos estratégicos para el **Content Studio**.
 - [x] **Total Domain Architecture**: Procesamiento de Color Grading in-place en Wasm SIMD. SVG abolido. ✅ v1.4.0
 - [x] **Advanced Film Emulation**: Grain dinámico por luminancia BT.601 + History State via Wasm. ✅ v1.4.0
 -   [x] **Benchmarking**: `frameMs` en tiempo real en badge UI. ✅ v1.2.0
--   [x] **Zero-Waste Frontend**: Eliminación completa de dependencias de animación, transicionando a CSS puro + Tailwind. ✅ v1.9.1
+-   [x] **Zero-Waste Frontend**: Eliminación completa de dependencias de animación. ✅ v1.9.1
+-   [x] **Dual-Stream SIMD Expansion**: Procesamiento sincronizado de Video + Webcam + RgbShift + Organic Grain. ✅ v3.1.0
 
 ### Hito 2: Edición No-Lineal (Timeline Expansion)
 - [ ] **Layer Blending Modes**: Multiply, Screen, Overlay en el pipeline.
@@ -21,8 +22,9 @@ Visión futura y objetivos estratégicos para el **Content Studio**.
   - [x] GPU-side Color Correction & Gamma.
   - [x] Diegetic UI Texture Injection.
 - [x] **Fase 4: Vortex-Optics v3**
-  - [x] Universal Lens Distortion.
-  - [x] Film Halation (Red Fringe).
+  - [x] Universal Lens Distortion. ✅ v3.0.0
+  - [x] Film Halation (Red Fringe). ✅ v3.0.0
+  - [x] RgbShift & Chromatic Aberration in SIMD. ✅ v3.1.0
 - [ ] **Fase 5: Exportación Direct-to-FFmpeg** subtítulos y efectos diegéticos mediante modelos locales.
 - [ ] **Project Export**: Renderizado final `mp4` utilizando `ffmpeg.wasm`.
 

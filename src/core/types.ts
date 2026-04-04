@@ -15,6 +15,15 @@ export interface GradientConfig {
   stops: GradientStop[];
 }
 
+export type AnimationEasing = 'linear' | 'easeIn' | 'easeOut' | 'easeInOut' | 'elastic';
+
+export interface Keyframe {
+  id: string;
+  time: number; // en segundos
+  value: any;
+  easing: AnimationEasing;
+}
+
 export interface Layer {
   id: string;
   name: string;
@@ -45,6 +54,7 @@ export interface Layer {
   selectionBorderWidth?: number;
   x: number;
   y: number;
+  keyframes?: Record<string, Keyframe[]>;
 }
 
 export interface EditorConfig {
@@ -73,6 +83,7 @@ export interface EditorConfig {
   videoGammaB: number;
   immersiveGrain: number;
   immersiveScanlines: number;
+  chromaticAberration: number;
   layers: Layer[];
 }
 
@@ -89,6 +100,9 @@ export interface EditorState {
   isPreview: boolean;
   showFloatingEditor: boolean;
   journal: JournalEntry[];
+  currentTime: number;
+  isPlaying: boolean;
+  duration: number;
 }
 
 export type EditorAction =
@@ -103,4 +117,7 @@ export type EditorAction =
   | { type: 'REORDER_LAYERS'; payload: Layer[] }
   | { type: 'UNDO'; payload: EditorConfig }
   | { type: 'REDO'; payload: EditorConfig }
+  | { type: 'SET_CURRENT_TIME'; payload: number }
+  | { type: 'SET_KEYFRAME'; payload: { layerId: string, property: string, time: number, value: any, easing: any } }
+  | { type: 'TOGGLE_PLAYBACK'; payload?: boolean }
   | { type: 'CLEAR_JOURNAL' };
