@@ -170,4 +170,39 @@ impl VideoProcessor {
             pixels[base + 2] = b.clamp(0.0, 255.0) as u8;
         }
     }
+
+    /// Mezcla de dos buffers (Base + Overlay) con Alpha Blending SIMD-ready
+    pub fn blend_layers(base_ptr: *mut u8, overlay_ptr: *const u8, len: usize, opacity: f32) {
+        let pixels = unsafe { std::slice::from_raw_parts_mut(base_ptr, len) };
+        let overlay = unsafe { std::slice::from_raw_parts(overlay_ptr, len) };
+        
+        let alpha = opacity.clamp(0.0, 1.0);
+        
+        // Loop optimizado para vectorización automática
+        for i in (0..len).step_by(4) {
+            if i + 3 >= len { break; }
+            
+            // Si el pixel del overlay es transparente (A=0), omitimos para performance
+            let current_over_a = (overlay[i + 3] as f32 / 255.0) * alpha;
+            if current_over_a < 0.001 { continue; }
+            
+            let over_r = overlay[i] as f32;
+            let over_g = overlay[i + 1] as f32;
+            let over_b = overlay[i + 2] as f32;
+            
+            let base_r = pixels[i] as f32;
+            let base_g = pixels[i + 1] as f32;
+            let base_b = pixels[i + 2] as f32;
+            
+            // Correct Source-Over Blending (using the alpha calculated)
+            let cur_inv_a = 1.0 - current_over_a;
+            let r = over_r * current_over_a + base_r * cur_inv_a;
+            let g = over_g * current_over_a + base_g * cur_inv_a;
+            let b = over_b * current_over_a + base_b * cur_inv_a;
+            
+            pixels[i]     = r as u8;
+            pixels[i + 1] = g as u8;
+            pixels[i + 2] = b as u8;
+        }
+    }
 }

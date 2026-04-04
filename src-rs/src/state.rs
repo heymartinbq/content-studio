@@ -1,4 +1,5 @@
 use serde::{Serialize, Deserialize};
+use crate::animation::{AnimationEngine, EasingType};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct GradientStop {
@@ -13,6 +14,14 @@ pub struct GradientConfig {
     pub gradient_type: String,
     pub angle: i32,
     pub stops: Vec<GradientStop>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct Keyframe {
+    pub id: String,
+    pub time: f32,
+    pub value: serde_json::Value,
+    pub easing: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -64,6 +73,9 @@ pub struct Layer {
     pub selection_border_width: Option<f32>,
     pub x: Option<f32>,
     pub y: Option<f32>,
+    pub rotation: Option<f32>,
+    pub scale: Option<f32>,
+    pub keyframes: Option<std::collections::HashMap<String, Vec<Keyframe>>>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -173,6 +185,99 @@ impl StateMachine {
     pub fn get_json(&mut self) -> *const u8 {
         self.last_json = serde_json::to_string(&self.current_state).unwrap_or_else(|_| "{}".to_string());
         // Null terminated string para C-Str reading
+        self.last_json.push('\0');
+        self.last_json.as_ptr()
+    }
+
+    /// Calcula el valor interpolado de una propiedad para una capa en un tiempo T
+    pub fn get_interpolated_value(&self, layer_id: &str, property: &str, time: f32, default_val: f32) -> f32 {
+        let layer = if let Some(l) = self.current_state.layers.iter().find(|l| l.id == layer_id) {
+            l
+        } else {
+            return default_val;
+        };
+
+        if let Some(keyframes_map) = &layer.keyframes {
+            if let Some(keyframes) = keyframes_map.get(property) {
+                if keyframes.is_empty() { return default_val; }
+                
+                let mut sorted_kf = keyframes.clone();
+                sorted_kf.sort_by(|a, b| a.time.partial_cmp(&b.time).unwrap());
+
+                if time <= sorted_kf[0].time {
+                    return sorted_kf[0].value.as_f64().unwrap_or(default_val as f64) as f32;
+                }
+                
+                if time >= sorted_kf.last().unwrap().time {
+                    return sorted_kf.last().unwrap().value.as_f64().unwrap_or(default_val as f64) as f32;
+                }
+
+                for i in 0..sorted_kf.len() - 1 {
+                    let start_kf = &sorted_kf[i];
+                    let end_kf = &sorted_kf[i+1];
+                    
+                    if time >= start_kf.time && time <= end_kf.time {
+                        let duration = end_kf.time - start_kf.time;
+                        let t = (time - start_kf.time) / duration;
+                        let start_val = start_kf.value.as_f64().unwrap_or(default_val as f64) as f32;
+                        let end_val = end_kf.value.as_f64().unwrap_or(default_val as f64) as f32;
+                        let easing = EasingType::from(start_kf.easing.as_deref().unwrap_or("linear"));
+                        
+                        return AnimationEngine::lerp(start_val, end_val, t, easing);
+                    }
+                }
+            }
+        }
+        
+        default_val
+    }
+
+    /// Calcula el color interpolado (Hex) para una capa en un tiempo T
+    pub fn get_interpolated_color(&mut self, layer_id: &str, property: &str, time: f32, default_hex: &str) -> *const u8 {
+        let layer = if let Some(l) = self.current_state.layers.iter().find(|l| l.id == layer_id) {
+            l
+        } else {
+            self.last_json = default_hex.to_string();
+            self.last_json.push('\0');
+            return self.last_json.as_ptr();
+        };
+
+        if let Some(keyframes_map) = &layer.keyframes {
+            if let Some(keyframes) = keyframes_map.get(property) {
+                if keyframes.is_empty() { 
+                    self.last_json = default_hex.to_string();
+                } else {
+                    let mut sorted_kf = keyframes.clone();
+                    sorted_kf.sort_by(|a, b| a.time.partial_cmp(&b.time).unwrap());
+
+                    if time <= sorted_kf[0].time {
+                        self.last_json = sorted_kf[0].value.as_str().unwrap_or(default_hex).to_string();
+                    } else if time >= sorted_kf.last().unwrap().time {
+                        self.last_json = sorted_kf.last().unwrap().value.as_str().unwrap_or(default_hex).to_string();
+                    } else {
+                        for i in 0..sorted_kf.len() - 1 {
+                            let start_kf = &sorted_kf[i];
+                            let end_kf = &sorted_kf[i+1];
+                            
+                            if time >= start_kf.time && time <= end_kf.time {
+                                let duration = end_kf.time - start_kf.time;
+                                let t = (time - start_kf.time) / duration;
+                                let start_hex_val = start_kf.value.as_str().unwrap_or(default_hex);
+                                let end_hex_val = end_kf.value.as_str().unwrap_or(default_hex);
+                                
+                                self.last_json = AnimationEngine::lerp_color(start_hex_val, end_hex_val, t);
+                                break;
+                            }
+                        }
+                    }
+                }
+            } else {
+                self.last_json = default_hex.to_string();
+            }
+        } else {
+            self.last_json = default_hex.to_string();
+        }
+
         self.last_json.push('\0');
         self.last_json.as_ptr()
     }

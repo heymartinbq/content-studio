@@ -6,6 +6,7 @@ mod debounce;
 mod video;
 mod spatial;
 mod state;
+mod animation;
 
 use history::HistoryStack;
 use debounce::DeltaFilter;
@@ -168,6 +169,18 @@ pub unsafe extern "C" fn vortex_process_frame_in_place(
     }
 }
 
+/// Mezcla dos buffers de video en memoria Wasm
+///
+/// # Safety
+///
+/// Los punteros deben ser válidos y tener la misma longitud `len`.
+#[no_mangle]
+pub unsafe extern "C" fn vortex_blend_layers(base_ptr: *mut u8, overlay_ptr: *const u8, len: usize, opacity: f32) {
+    if let Some(_) = ENGINE_INSTANCE {
+        VideoProcessor::blend_layers(base_ptr, overlay_ptr, len, opacity);
+    }
+}
+
 /// Debounce inteligente de sliders
 ///
 /// # Safety
@@ -231,10 +244,10 @@ pub unsafe extern "C" fn redo_history() -> *const u8 {
 // --- SPATIAL ENGINE DIRECT PIPELINE ---
 
 #[no_mangle]
-pub extern "C" fn vortex_sync_layer(id: u16, x: f32, y: f32, width: f32, height: f32, locked: bool, visible: bool) {
+pub extern "C" fn vortex_sync_layer(id: u16, x: f32, y: f32, width: f32, height: f32, rotation: f32, scale: f32, locked: bool, visible: bool) {
     unsafe {
         if let Some(ref mut engine) = ENGINE_INSTANCE {
-            engine.spatial.sync_layer(id, x, y, width, height, locked, visible);
+            engine.spatial.sync_layer(id, x, y, width, height, rotation, scale, locked, visible);
         }
     }
 }
@@ -303,6 +316,46 @@ pub extern "C" fn vortex_get_layer_y(id: u16) -> f32 {
     }
 }
 
+#[no_mangle]
+pub extern "C" fn vortex_get_layer_scale(id: u16) -> f32 {
+    unsafe {
+        if let Some(ref mut engine) = ENGINE_INSTANCE {
+            engine.spatial.get_layer_scale(id)
+        } else {
+            1.0
+        }
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn vortex_get_layer_rotation(id: u16) -> f32 {
+    unsafe {
+        if let Some(ref mut engine) = ENGINE_INSTANCE {
+            engine.spatial.get_layer_rotation(id)
+        } else {
+            0.0
+        }
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn vortex_scale_update(delta: f32) {
+    unsafe {
+        if let Some(ref mut engine) = ENGINE_INSTANCE {
+            engine.spatial.scale_update(delta);
+        }
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn vortex_rotate_update(delta: f32) {
+    unsafe {
+        if let Some(ref mut engine) = ENGINE_INSTANCE {
+            engine.spatial.rotate_update(delta);
+        }
+    }
+}
+
 // --- STATE MACHINE GOVERNANCE ---
 
 /// Hidrata el estado de la máquina desde un JSON
@@ -334,4 +387,54 @@ pub unsafe extern "C" fn vortex_get_state() -> *const u8 {
         return engine.state_machine.get_json();
     }
     std::ptr::null()
+}
+
+/// Obtiene un valor interpolado desde el motor de animación de Rust
+///
+/// # Safety
+///
+/// Desreferencia `layer_id_ptr` y `prop_ptr` como strings UTF-8.
+#[no_mangle]
+pub unsafe extern "C" fn vortex_get_interpolated_value(
+    layer_id_ptr: *const u8, layer_id_len: usize,
+    prop_ptr: *const u8, prop_len: usize,
+    time: f32, default_val: f32
+) -> f32 {
+    if let Some(ref engine) = ENGINE_INSTANCE {
+        let l_slice = std::slice::from_raw_parts(layer_id_ptr, layer_id_len);
+        let p_slice = std::slice::from_raw_parts(prop_ptr, prop_len);
+        
+        let layer_id = std::str::from_utf8(l_slice).unwrap_or("");
+        let property = std::str::from_utf8(p_slice).unwrap_or("");
+        
+        engine.state_machine.get_interpolated_value(layer_id, property, time, default_val)
+    } else {
+        default_val
+    }
+}
+
+/// Obtiene un color Hex interpolado desde Rust
+///
+/// # Safety
+///
+/// Desreferencia punteros de string UTF-8.
+#[no_mangle]
+pub unsafe extern "C" fn vortex_get_interpolated_color(
+    layer_id_ptr: *const u8, layer_id_len: usize,
+    prop_ptr: *const u8, prop_len: usize,
+    time: f32, default_hex_ptr: *const u8, default_hex_len: usize
+) -> *const u8 {
+    if let Some(ref mut engine) = ENGINE_INSTANCE {
+        let l_slice = std::slice::from_raw_parts(layer_id_ptr, layer_id_len);
+        let p_slice = std::slice::from_raw_parts(prop_ptr, prop_len);
+        let d_slice = std::slice::from_raw_parts(default_hex_ptr, default_hex_len);
+        
+        let layer_id = std::str::from_utf8(l_slice).unwrap_or("");
+        let property = std::str::from_utf8(p_slice).unwrap_or("");
+        let default_hex = std::str::from_utf8(d_slice).unwrap_or("#ffffff");
+        
+        engine.state_machine.get_interpolated_color(layer_id, property, time, default_hex)
+    } else {
+        std::ptr::null()
+    }
 }

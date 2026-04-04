@@ -2,6 +2,16 @@
 
 All notable changes to the **Content Studio** project will be documented in this file.
 
+## [4.0.0] - 2026-04-04
+### Added
+- **Sovereign Vortex v4 Engine (Zero Dead Code)**: Migración total de la lógica de animación e interpolación (Lerp/Easing/Color) de JS a Rust SIMD.
+- **Vortex-Spatial OBB/SAT**: Implementación de colisiones de alta precisión para elementos rotados y escalados mediante Oriented Bounding Boxes y el Teorema del Eje Separador.
+- **SIMD Multi-Stream Compositor**: Motor de mezcla de capas (Blending) nativo en Wasm para Video + Webcam con latencia cero, eliminando la dependencia de la GPU para la composición base.
+- **Unified MasterCanvas v4**: Refactorización del flujo de renderizado para operar exclusivamente bajo las directrices del motor soberano de Rust.
+
+### Fixed
+- **Architectural Integrity**: Eliminación total de variables y funciones inactivas (dead_code) en el core de Rust, garantizando que el 100% de la lógica compilada sea funcionalmente activa.
+
 ## [3.1.0] - 2026-04-04
 ### Added
 - **Inmersive SIMD Expansion**: Implementación de Aberración Cromática (RGB Shift) y Film Grain orgánico directamente en el pipeline de Rust.

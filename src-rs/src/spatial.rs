@@ -5,6 +5,8 @@ pub struct LayerNode {
     pub y: f32,
     pub width: f32,     // Calculado estáticamente (hitbox ancho)
     pub height: f32,    // Calculado estáticamente (hitbox alto)
+    pub rotation: f32,  // En radianes
+    pub scale: f32,
     pub locked: bool,
     pub visible: bool,
 }
@@ -36,20 +38,22 @@ impl SpatialEngine {
 
     /// Sincronizar un layer desde el frontend a la memoria Wasm
     #[allow(clippy::too_many_arguments)]
-    pub fn sync_layer(&mut self, id: u16, x: f32, y: f32, width: f32, height: f32, locked: bool, visible: bool) {
+    pub fn sync_layer(&mut self, id: u16, x: f32, y: f32, width: f32, height: f32, rotation: f32, scale: f32, locked: bool, visible: bool) {
         if id == 0 { return; }
         if let Some(layer) = self.layers.iter_mut().find(|l| l.id == id) {
             // Durante un Drag activo, ignoramos los updates de X/Y externos para evitar Jitter (React Lag)
             if self.active_layer != id {
                 layer.x = x;
                 layer.y = y;
+                layer.rotation = rotation;
+                layer.scale = scale;
             }
             layer.width = width;
             layer.height = height;
             layer.locked = locked;
             layer.visible = visible;
         } else {
-            self.layers.push(LayerNode { id, x, y, width, height, locked, visible });
+            self.layers.push(LayerNode { id, x, y, width, height, rotation, scale, locked, visible });
         }
     }
 
@@ -61,21 +65,44 @@ impl SpatialEngine {
         for layer in self.layers.iter().rev() {
             if !layer.visible || layer.locked { continue; }
 
-            let left = layer.x - layer.width / 2.0;
-            let right = layer.x + layer.width / 2.0;
-            let top = layer.y - layer.height / 2.0;
-            let bottom = layer.y + layer.height / 2.0;
+            // Algoritmo SAT para Rotated HitTesting (OBB)
+            let s = layer.rotation.sin();
+            let c = layer.rotation.cos();
+            
+            let half_w = (layer.width * layer.scale / 2.0) + 20.0;
+            let half_h = (layer.height * layer.scale / 2.0) + 20.0;
 
-            let pad = 40.0; // HitBox padding generoso para UX táctil
+            // Trasladamos el mouse al espacio local de la capa (rotación inversa)
+            let tx = mouse_x - layer.x;
+            let ty = mouse_y - layer.y;
+            
+            let local_x = tx * c + ty * s;
+            let local_y = -tx * s + ty * c;
 
-            if mouse_x >= left - pad && mouse_x <= right + pad &&
-               mouse_y >= top - pad && mouse_y <= bottom + pad {
+            if local_x >= -half_w && local_x <= half_w &&
+               local_y >= -half_h && local_y <= half_h {
                 self.active_layer = layer.id;
                 return layer.id;
             }
         }
         self.active_layer = 0;
         0
+    }
+
+    /// SCALE - Actualización basada en deltas de distancia
+    pub fn scale_update(&mut self, delta: f32) {
+        if self.active_layer == 0 { return; }
+        if let Some(layer) = self.layers.iter_mut().find(|l| l.id == self.active_layer) {
+            layer.scale = (layer.scale + delta).max(0.1);
+        }
+    }
+
+    /// ROTATE - Actualización basada en deltas angulares
+    pub fn rotate_update(&mut self, delta: f32) {
+        if self.active_layer == 0 { return; }
+        if let Some(layer) = self.layers.iter_mut().find(|l| l.id == self.active_layer) {
+            layer.rotation += delta;
+        }
     }
 
     /// DRAG - Actualización de posición basada en DELTAS relativos
@@ -112,5 +139,13 @@ impl SpatialEngine {
 
     pub fn get_active_layer_id(&self) -> u16 {
         self.active_layer
+    }
+
+    pub fn get_layer_scale(&self, id: u16) -> f32 {
+        self.layers.iter().find(|l| l.id == id).map_or(1.0, |l| l.scale)
+    }
+
+    pub fn get_layer_rotation(&self, id: u16) -> f32 {
+        self.layers.iter().find(|l| l.id == id).map_or(0.0, |l| l.rotation)
     }
 }

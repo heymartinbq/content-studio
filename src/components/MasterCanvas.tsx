@@ -160,6 +160,7 @@ export default function MasterCanvas({ config, videoRef, webcamRef }: MasterCanv
         vC: gl.getUniformLocation(pr, "u_vignetteColor")
     };
 
+
     const upT = (t: WebGLTexture | null, s: any) => {
         gl.bindTexture(gl.TEXTURE_2D, t);
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, s);
@@ -168,22 +169,7 @@ export default function MasterCanvas({ config, videoRef, webcamRef }: MasterCanv
     const hToR = (h: string) => [parseInt(h.slice(1,3), 16)/255, parseInt(h.slice(3,5),16)/255, parseInt(h.slice(5,7),16)/255];
     const w = glCanvas.width, h = glCanvas.height;
 
-    const getI = (kf: any[] | undefined, t: number, d: any) => {
-        if (!kf || kf.length === 0) return d;
-        const s = [...kf].sort((a,b) => a.time - b.time);
-        if (t <= s[0].time) return s[0].value;
-        if (t >= s[s.length-1].time) return s[s.length-1].value;
-        const idx = s.findIndex(k => k.time > t);
-        const p = s[idx-1], n = s[idx], f = (t - p.time)/(n.time - p.time);
-        const ease = (v: number, tp: string) => {
-            if (tp === 'easeIn') return v*v*v;
-            if (tp === 'easeOut') return 1-Math.pow(1-v,3);
-            if (tp === 'easeInOut') return v<0.5 ? 4*v*v*v : 1-Math.pow(-2*v+2,3)/2;
-            return v;
-        };
-        const ev = ease(f, p.easing || 'linear');
-        return (typeof p.value === 'number') ? p.value + (n.value - p.value)*ev : p.value;
-    };
+    // Removiendo getI de JS - La autoridad es de Rust.
 
     let lastT = performance.now();
 
@@ -199,30 +185,57 @@ export default function MasterCanvas({ config, videoRef, webcamRef }: MasterCanv
           else { actions.setCurrentTime(nt); }
       }
 
+      const ct = st.currentTime;
       ctx.clearRect(0, 0, w, h);
       cfg.layers.forEach((layer) => {
         if (!layer.visible || layer.type !== "text" || !layer.text) return;
         ctx.save();
-        const fz = getI(layer.keyframes?.fontSize, st.currentTime, layer.fontSize || 120);
+        
+        let fz = layer.fontSize || 120;
+        let opacity = layer.opacity ?? 1;
+        let cx = layer.x || 0;
+        let cy = layer.y || 0;
+        let rotation = layer.rotation || 0;
+        let scale = layer.scale || 1.0;
+        let color = layer.color || "#ffffff";
+
+        if (engine) {
+            fz = engine.getInterpolatedValue(layer.id, "fontSize", ct, fz);
+            opacity = engine.getInterpolatedValue(layer.id, "opacity", ct, opacity);
+            cx = engine.getInterpolatedValue(layer.id, "x", ct, cx);
+            cy = engine.getInterpolatedValue(layer.id, "y", ct, cy);
+            rotation = engine.getInterpolatedValue(layer.id, "rotation", ct, rotation);
+            scale = engine.getInterpolatedValue(layer.id, "scale", ct, scale);
+            color = engine.getInterpolatedColor(layer.id, "color", ct, color);
+        }
+
         ctx.font = `900 ${fz}px Space Grotesk`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-        ctx.globalAlpha = getI(layer.keyframes?.opacity, st.currentTime, layer.opacity ?? 1);
+        ctx.globalAlpha = opacity;
 
         const wasmId = getWasmId(layer.id);
         
         // Prioridad absoluta al Wasm durante la interacción (Authority Hand-off)
         const isDragging = st.activeLayerId === layer.id && vortexPtrRef.current?.isActive();
-        const cx = (isDragging && engine) ? engine.vortex_get_layer_x(wasmId) : getI(layer.keyframes?.x, st.currentTime, layer.x || 0);
-        const cy = (isDragging && engine) ? engine.vortex_get_layer_y(wasmId) : getI(layer.keyframes?.y, st.currentTime, layer.y || 0);
+        if (isDragging && engine) {
+            cx = engine.vortex_get_layer_x(wasmId);
+            cy = engine.vortex_get_layer_y(wasmId);
+            scale = engine.vortex_get_layer_scale(wasmId);
+            rotation = engine.vortex_get_layer_rotation(wasmId);
+        }
 
         const m = ctx.measureText(layer.text);
-        if (engine) engine.vortex_sync_layer(wasmId, cx, cy, m.width, fz, layer.locked, layer.visible);
+        if (engine) engine.vortex_sync_layer(wasmId, cx, cy, m.width, fz, rotation, scale, layer.locked, layer.visible);
 
         const px = (w/2) + cx, py = (h/2) + cy;
-        ctx.fillStyle = layer.color || "#ffffff"; ctx.fillText(layer.text, px, py);
+        ctx.translate(px, py);
+        ctx.rotate(rotation);
+        ctx.scale(scale, scale);
+        
+        ctx.fillStyle = color; ctx.fillText(layer.text, 0, 0);
         
         if (st.activeLayerId === layer.id && !layer.locked) {
             ctx.lineWidth = 1; ctx.strokeStyle = "rgba(59, 130, 246, 0.7)";
-            ctx.strokeRect(px - (m.width/2)-10, py-(fz/2)-10, m.width+20, fz+20);
+            ctx.strokeRect(-(m.width/2)-10, -(fz/2)-10, m.width+20, fz+20);
         }
         ctx.restore();
       });
@@ -259,16 +272,50 @@ export default function MasterCanvas({ config, videoRef, webcamRef }: MasterCanv
       };
 
       const processedVideo = videoRef.current ? processSource(videoRef.current, videoProcRef) : null;
-      const processedWebcam = (cfg.useWebcam && webcamRef.current) ? processSource(webcamRef.current, webcamProcRef) : null;
+      
+      if (processedVideo && cfg.useWebcam && webcamRef.current) {
+          const wVid = webcamRef.current;
+          if (wVid.readyState >= 2) {
+              if (!webcamProcRef.current) webcamProcRef.current = document.createElement("canvas");
+              const wc = webcamProcRef.current;
+              if (wc.width !== wVid.videoWidth) { wc.width = wVid.videoWidth; wc.height = wVid.videoHeight; }
+              const wct = wc.getContext("2d", { willReadFrequently: true })!;
+              wct.drawImage(wVid, 0, 0, wc.width, wc.height);
+              const wImg = wct.getImageData(0, 0, wc.width, wc.height);
+              
+              if (engine) {
+                  // Buffer Secundario para mezcla SIMD
+                  const size = wImg.data.byteLength;
+                  let overlayPtr = 0;
+                  // Reusar o alocar buffer de overlay
+                  // Nota: En una implementación de alta gama usaríamos un pool de buffers.
+                  // Aquí usamos vortex_alloc temporalmente por simplicidad.
+                  // Sin embargo, para no saturar memoria, preferimos una dirección fija si es posible.
+                  // Usaremos la memoria un paso después del main buffer.
+                  overlayPtr = engine.vortex_get_main_buffer_ptr() + size + 1024;
+                  
+                  const overlayMem = new Uint8Array(engine.getMemoryBuffer(), overlayPtr, size);
+                  overlayMem.set(wImg.data);
+                  
+                  engine.blendLayers(engine.vortex_get_main_buffer_ptr(), overlayPtr, size, cfg.webcamOpacity/100);
+                  
+                  const pctx = processedVideo.getContext("2d")!;
+                  const mainImg = pctx.getImageData(0, 0, processedVideo.width, processedVideo.height);
+                  mainImg.data.set(new Uint8Array(engine.getMemoryBuffer(), engine.vortex_get_main_buffer_ptr(), size));
+                  pctx.putImageData(mainImg, 0, 0);
+              }
+          }
+      }
 
       if (processedVideo) { gl.activeTexture(gl.TEXTURE0); upT(vT, processedVideo); }
-      if (processedWebcam) { gl.activeTexture(gl.TEXTURE1); upT(wT, processedWebcam); }
+      // El canvas de webcam ya no necesita textura propia si fue mezclado en Wasm
+      gl.activeTexture(gl.TEXTURE1); upT(wT, overlayCanvas); // Placeholder o UI
       
       gl.activeTexture(gl.TEXTURE2); upT(uT, overlayCanvas);
       
       gl.useProgram(pr);
       gl.uniform1i(loc.vid, 0); gl.uniform1i(loc.web, 1); gl.uniform1i(loc.ui, 2);
-      gl.uniform1f(loc.wOp, (cfg.useWebcam && processedWebcam ? cfg.webcamOpacity/100 : 0));
+      gl.uniform1f(loc.wOp, 0); // Ya mezclado en Wasm
       gl.uniform1f(loc.dst, cfg.lensDistortion); gl.uniform1f(loc.hal, cfg.halationIntensity);
       gl.uniform1f(loc.vI, cfg.vignetteIntensity); gl.uniform1f(loc.vR, cfg.vignetteRadius); gl.uniform1f(loc.vS, cfg.vignetteSoftness);
       const c = hToR(cfg.vignetteColor); gl.uniform3f(loc.vC, c[0], c[1], c[2]);

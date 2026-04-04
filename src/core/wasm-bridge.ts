@@ -30,13 +30,20 @@ interface VortexWasmExports {
     chromatic_aberration: number,
     frame_time: number,
   ) => void;
-  vortex_sync_layer: (id: number, x: number, y: number, width: number, height: number, locked: boolean, visible: boolean) => void;
+  vortex_blend_layers: (base_ptr: number, overlay_ptr: number, len: number, opacity: number) => void;
+  vortex_sync_layer: (id: number, x: number, y: number, width: number, height: number, rotation: number, scale: number, locked: boolean, visible: boolean) => void;
   vortex_hit_test: (x: number, y: number) => number;
   vortex_drag_update: (mouseX: number, mouseY: number) => void;
+  vortex_scale_update: (delta: number) => void;
+  vortex_rotate_update: (delta: number) => void;
   vortex_release: () => number;
   vortex_get_active_layer_id: () => number;
   vortex_get_layer_x: (id: number) => number;
   vortex_get_layer_y: (id: number) => number;
+  vortex_get_layer_scale: (id: number) => number;
+  vortex_get_layer_rotation: (id: number) => number;
+  vortex_get_interpolated_value: (l_ptr: number, l_len: number, p_ptr: number, p_len: number, t: number, def: number) => number;
+  vortex_get_interpolated_color: (l_ptr: number, l_len: number, p_ptr: number, p_len: number, t: number, d_ptr: number, d_len: number) => number;
   debounce_update: (
     key_ptr: number,
     key_len: number,
@@ -149,8 +156,8 @@ export class VortexEngine {
 
   // --- SPATIAL DIRECT PIPELINE ---
   
-  vortex_sync_layer(id: number, x: number, y: number, width: number, height: number, locked: boolean, visible: boolean): void {
-    this.exports.vortex_sync_layer(id, x, y, width, height, locked, visible);
+  vortex_sync_layer(id: number, x: number, y: number, width: number, height: number, rotation: number, scale: number, locked: boolean, visible: boolean): void {
+    this.exports.vortex_sync_layer(id, x, y, width, height, rotation, scale, locked, visible);
   }
 
   vortex_hit_test(mouseX: number, mouseY: number): number {
@@ -175,6 +182,78 @@ export class VortexEngine {
 
   vortex_get_layer_y(id: number): number {
     return this.exports.vortex_get_layer_y(id);
+  }
+
+  vortex_get_layer_scale(id: number): number {
+    return this.exports.vortex_get_layer_scale(id);
+  }
+
+  vortex_get_layer_rotation(id: number): number {
+    return this.exports.vortex_get_layer_rotation(id);
+  }
+
+  vortex_scale_update(delta: number): void {
+    this.exports.vortex_scale_update(delta);
+  }
+
+  vortex_rotate_update(delta: number): void {
+    this.exports.vortex_rotate_update(delta);
+  }
+
+  /**
+   * Obtiene un valor interpolado directamente desde el motor de animación de Rust.
+   */
+  getInterpolatedValue(layerId: string, property: string, time: number, defaultVal: number): number {
+    const lEnc = new TextEncoder().encode(layerId);
+    const pEnc = new TextEncoder().encode(property);
+    const lPtr = this.exports.vortex_alloc(lEnc.byteLength);
+    const pPtr = this.exports.vortex_alloc(pEnc.byteLength);
+    
+    try {
+        new Uint8Array(this.exports.memory.buffer, lPtr, lEnc.byteLength).set(lEnc);
+        new Uint8Array(this.exports.memory.buffer, pPtr, pEnc.byteLength).set(pEnc);
+        return this.exports.vortex_get_interpolated_value(lPtr, lEnc.byteLength, pPtr, pEnc.byteLength, time, defaultVal);
+    } finally {
+        this.exports.vortex_free(lPtr, lEnc.byteLength);
+        this.exports.vortex_free(pPtr, pEnc.byteLength);
+    }
+  }
+
+  /**
+   * Obtiene un color interpolado directamente desde Rust.
+   */
+  getInterpolatedColor(layerId: string, property: string, time: number, defaultHex: string): string {
+    const lEnc = new TextEncoder().encode(layerId);
+    const pEnc = new TextEncoder().encode(property);
+    const dEnc = new TextEncoder().encode(defaultHex);
+    
+    const lPtr = this.exports.vortex_alloc(lEnc.byteLength);
+    const pPtr = this.exports.vortex_alloc(pEnc.byteLength);
+    const dPtr = this.exports.vortex_alloc(dEnc.byteLength);
+    
+    try {
+        new Uint8Array(this.exports.memory.buffer, lPtr, lEnc.byteLength).set(lEnc);
+        new Uint8Array(this.exports.memory.buffer, pPtr, pEnc.byteLength).set(pEnc);
+        new Uint8Array(this.exports.memory.buffer, dPtr, dEnc.byteLength).set(dEnc);
+        
+        const resPtr = this.exports.vortex_get_interpolated_color(lPtr, lEnc.byteLength, pPtr, pEnc.byteLength, time, dPtr, dEnc.byteLength);
+        return this.readStringFromPtr(resPtr) || defaultHex;
+    } finally {
+        this.exports.vortex_free(lPtr, lEnc.byteLength);
+        this.exports.vortex_free(pPtr, pEnc.byteLength);
+        this.exports.vortex_free(dPtr, dEnc.byteLength);
+    }
+  }
+
+  /**
+   * Mezcla de dos buffers directamente en Wasm.
+   * @param basePtr Puntero al buffer base (se mutará)
+   * @param overlayPtr Puntero al buffer superior 
+   * @param len Longitud del buffer
+   * @param opacity Opacidad del overlay [0-1]
+   */
+  blendLayers(basePtr: number, overlayPtr: number, len: number, opacity: number): void {
+      this.exports.vortex_blend_layers(basePtr, overlayPtr, len, opacity);
   }
 
   /** Guarda snapshot del estado en el historial Wasm. */
