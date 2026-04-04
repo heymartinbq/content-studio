@@ -2,6 +2,11 @@
 
 All notable changes to the **Content Studio** project will be documented in this file.
 
+## [4.0.3] - 2026-04-04
+### Fixed
+- **Standardized Bindgen FFI**: Migración masiva de funciones `no_mangle` a `#[wasm_bindgen]`. Esto previene que el linker elimine funciones de la API pública en compilaciones de release, resolviendo errores de "is not a function" en el frontend.
+- **Zero-Warning Wasm Core**: Eliminación de advertencias de Rust 2024 (static mut refs) utilizando `addr_of!` para garantizar la soberanía de integridad documental.
+
 ## [4.0.2] - 2026-04-04
 ### Fixed
 - **Decoupled Render Pipeline**: Se ha eliminado la dependencia jerárquica que bloqueaba el renderizado si el video de fondo fallaba. La webcam ahora es visible incluso sin video base.

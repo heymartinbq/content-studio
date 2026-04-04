@@ -1,4 +1,4 @@
-# Content Studio ROADMAP `v4.0.2`
+# Content Studio ROADMAP `v4.0.3`
 
 Visión futura y objetivos estratégicos para el **Content Studio**.
 
@@ -12,6 +12,7 @@ Visión futura y objetivos estratégicos para el **Content Studio**.
 - [x] **Advanced Film Emulation**: Grain dinámico por luminancia BT.601 + History State via Wasm. ✅ v1.4.0
 - [x] **Sovereign Vortex v4 Engine**: Animación, Transformación OBB y Mezcla Multi-stream nativa sin dead code. ✅ v4.0.0
 - [x] **Decoupled Pipeline**: Independencia de renderizado Video/Webcam y estabilidad de memoria. ✅ v4.0.2
+- [x] **Standardized Bindgen**: Restauración de APIs críticas y 0 warnings de compilación. ✅ v4.0.3
 -   [x] **Benchmarking**: `frameMs` en tiempo real en badge UI. ✅ v1.2.0
 -   [x] **Zero-Waste Frontend**: Eliminación completa de dependencias de animación. ✅ v1.9.1
 -   [x] **Dual-Stream SIMD Expansion**: Procesamiento sincronizado de Video + Webcam + RgbShift + Organic Grain. ✅ v3.1.0

@@ -15,6 +15,7 @@ use spatial::SpatialEngine;
 use state::StateMachine;
 
 use std::alloc::{alloc, dealloc, Layout};
+use wasm_bindgen::prelude::*;
 
 // Global engine instance stored as a static mutable (standard for raw Wasm modules)
 // For multithreading safety we would use Mutex, but for JS-single-thread it's atomic.
@@ -72,8 +73,8 @@ impl VortexEngine {
 }
 
 /// Inicialización del motor
-#[no_mangle]
-pub extern "C" fn init_engine() {
+#[wasm_bindgen]
+pub fn init_engine() {
     unsafe {
         ENGINE_INSTANCE = Some(VortexEngine::new());
     }
@@ -92,28 +93,22 @@ pub extern "C" fn init_engine() {
 ///
 /// Esta función es insegura porque devuelve un puntero sin gestionar de forma atómica.
 /// El llamador debe asegurarse de liberar esta memoria usando `vortex_free`.
-#[no_mangle]
-pub unsafe extern "C" fn vortex_alloc(size: usize) -> *mut u8 {
+#[wasm_bindgen]
+pub unsafe fn vortex_alloc(size: usize) -> *mut u8 {
     let layout = Layout::from_size_align(size, 16).unwrap();
     alloc(layout)
 }
 
-/// Libera la memoria reservada.
-///
-/// # Safety
-///
-/// Esta función es insegura ya que desreferencia un puntero de memoria cruda.
-/// El llamador debe asegurarse de que el puntero sea válido y haya sido obtenido vía `vortex_alloc`.
-#[no_mangle]
-pub unsafe extern "C" fn vortex_free(ptr: *mut u8, size: usize) {
+#[wasm_bindgen]
+pub unsafe fn vortex_free(ptr: *mut u8, size: usize) {
     let layout = Layout::from_size_align(size, 16).unwrap();
     dealloc(ptr, layout)
 }
 
 // --- VIDEO MAIN BUFFER PIPELINE ---
 
-#[no_mangle]
-pub extern "C" fn vortex_init_pipeline(width: u32, height: u32) {
+#[wasm_bindgen]
+pub fn vortex_init_pipeline(width: u32, height: u32) {
     unsafe {
         if let Some(ref mut engine) = ENGINE_INSTANCE {
             engine.init_pipeline(width, height);
@@ -121,8 +116,8 @@ pub extern "C" fn vortex_init_pipeline(width: u32, height: u32) {
     }
 }
 
-#[no_mangle]
-pub extern "C" fn vortex_get_main_buffer_ptr() -> *mut u8 {
+#[wasm_bindgen]
+pub fn vortex_get_main_buffer_ptr() -> *mut u8 {
     unsafe {
         if let Some(ref mut engine) = ENGINE_INSTANCE {
             engine.get_main_buffer_ptr()
@@ -132,8 +127,8 @@ pub extern "C" fn vortex_get_main_buffer_ptr() -> *mut u8 {
     }
 }
 
-#[no_mangle]
-pub extern "C" fn vortex_get_overlay_buffer_ptr() -> *mut u8 {
+#[wasm_bindgen]
+pub fn vortex_get_overlay_buffer_ptr() -> *mut u8 {
     unsafe {
         if let Some(ref mut engine) = ENGINE_INSTANCE {
             engine.get_overlay_buffer_ptr()
@@ -143,15 +138,9 @@ pub extern "C" fn vortex_get_overlay_buffer_ptr() -> *mut u8 {
     }
 }
 
-/// Procesa un cuadro de video aplicando todos los filtros en una sola pasada SIMD.
-///
-/// # Safety
-///
-/// Esta función desreferencia el puntero interno del buffer gestionado de forma soberana.
-/// El llamador debe asegurar que el motor haya sido inicializado.
-#[no_mangle]
+#[wasm_bindgen]
 #[allow(clippy::too_many_arguments)]
-pub unsafe extern "C" fn vortex_process_frame_in_place(
+pub unsafe fn vortex_process_frame_in_place(
     width: u32,
     height: u32,
     grain: f32,
@@ -196,9 +185,9 @@ pub unsafe extern "C" fn vortex_process_frame_in_place(
 /// # Safety
 ///
 /// Los punteros deben ser válidos y tener la misma longitud `len`.
-#[no_mangle]
-pub unsafe extern "C" fn vortex_blend_layers(base_ptr: *mut u8, overlay_ptr: *const u8, len: usize, opacity: f32) {
-    if let Some(_) = ENGINE_INSTANCE {
+#[wasm_bindgen]
+pub unsafe fn vortex_blend_layers(base_ptr: *mut u8, overlay_ptr: *const u8, len: usize, opacity: f32) {
+    if unsafe { (*std::ptr::addr_of!(ENGINE_INSTANCE)).is_some() } {
         VideoProcessor::blend_layers(base_ptr, overlay_ptr, len, opacity);
     }
 }
@@ -208,8 +197,8 @@ pub unsafe extern "C" fn vortex_blend_layers(base_ptr: *mut u8, overlay_ptr: *co
 /// # Safety
 ///
 /// Esta función desreferencia `key_ptr` asumiendo que es un buffer UTF-8 válido de longitud `key_len`.
-#[no_mangle]
-pub unsafe extern "C" fn debounce_update(key_ptr: *const u8, key_len: usize, value: f64, delta: f64) -> bool {
+#[wasm_bindgen]
+pub unsafe fn debounce_update(key_ptr: *const u8, key_len: usize, value: f64, delta: f64) -> bool {
     if let Some(ref mut engine) = ENGINE_INSTANCE {
         let slice = std::slice::from_raw_parts(key_ptr, key_len);
         let key = std::str::from_utf8(slice).unwrap_or("unknown").to_string();
@@ -224,8 +213,8 @@ pub unsafe extern "C" fn debounce_update(key_ptr: *const u8, key_len: usize, val
 /// # Safety
 ///
 /// Esta función desreferencia `snapshot_ptr` asumiendo que apunta a memoria válida de longitud `len`.
-#[no_mangle]
-pub unsafe extern "C" fn push_history(snapshot_ptr: *const u8, len: usize) {
+#[wasm_bindgen]
+pub unsafe fn push_history(snapshot_ptr: *const u8, len: usize) {
     if let Some(ref mut engine) = ENGINE_INSTANCE {
         let slice = std::slice::from_raw_parts(snapshot_ptr, len);
         engine.history.push(slice.to_vec());
@@ -265,8 +254,9 @@ pub unsafe extern "C" fn redo_history() -> *const u8 {
 
 // --- SPATIAL ENGINE DIRECT PIPELINE ---
 
-#[no_mangle]
-pub extern "C" fn vortex_sync_layer(id: u16, x: f32, y: f32, width: f32, height: f32, rotation: f32, scale: f32, locked: bool, visible: bool) {
+#[wasm_bindgen]
+#[allow(clippy::too_many_arguments)]
+pub fn vortex_sync_layer(id: u16, x: f32, y: f32, width: f32, height: f32, rotation: f32, scale: f32, locked: bool, visible: bool) {
     unsafe {
         if let Some(ref mut engine) = ENGINE_INSTANCE {
             engine.spatial.sync_layer(id, x, y, width, height, rotation, scale, locked, visible);
@@ -274,8 +264,8 @@ pub extern "C" fn vortex_sync_layer(id: u16, x: f32, y: f32, width: f32, height:
     }
 }
 
-#[no_mangle]
-pub extern "C" fn vortex_hit_test(mouse_x: f32, mouse_y: f32) -> u16 {
+#[wasm_bindgen]
+pub fn vortex_hit_test(mouse_x: f32, mouse_y: f32) -> u16 {
     unsafe {
         if let Some(ref mut engine) = ENGINE_INSTANCE {
             engine.spatial.hit_test(mouse_x, mouse_y)
@@ -285,8 +275,8 @@ pub extern "C" fn vortex_hit_test(mouse_x: f32, mouse_y: f32) -> u16 {
     }
 }
 
-#[no_mangle]
-pub extern "C" fn vortex_drag_update(mouse_x: f32, mouse_y: f32) {
+#[wasm_bindgen]
+pub fn vortex_drag_update(mouse_x: f32, mouse_y: f32) {
     unsafe {
         if let Some(ref mut engine) = ENGINE_INSTANCE {
             engine.spatial.drag_update(mouse_x, mouse_y);
@@ -294,8 +284,8 @@ pub extern "C" fn vortex_drag_update(mouse_x: f32, mouse_y: f32) {
     }
 }
 
-#[no_mangle]
-pub extern "C" fn vortex_release() -> u16 {
+#[wasm_bindgen]
+pub fn vortex_release() -> u16 {
     unsafe {
         if let Some(ref mut engine) = ENGINE_INSTANCE {
             engine.spatial.release()
@@ -305,8 +295,8 @@ pub extern "C" fn vortex_release() -> u16 {
     }
 }
 
-#[no_mangle]
-pub extern "C" fn vortex_get_active_layer_id() -> u16 {
+#[wasm_bindgen]
+pub fn vortex_get_active_layer_id() -> u16 {
     unsafe {
         if let Some(ref mut engine) = ENGINE_INSTANCE {
             engine.spatial.get_active_layer_id()
@@ -317,7 +307,8 @@ pub extern "C" fn vortex_get_active_layer_id() -> u16 {
 }
 
 #[no_mangle]
-pub extern "C" fn vortex_get_layer_x(id: u16) -> f32 {
+#[wasm_bindgen]
+pub fn vortex_get_layer_x(id: u16) -> f32 {
     unsafe {
         if let Some(ref mut engine) = ENGINE_INSTANCE {
             engine.spatial.get_layer_x(id)
@@ -327,8 +318,8 @@ pub extern "C" fn vortex_get_layer_x(id: u16) -> f32 {
     }
 }
 
-#[no_mangle]
-pub extern "C" fn vortex_get_layer_y(id: u16) -> f32 {
+#[wasm_bindgen]
+pub fn vortex_get_layer_y(id: u16) -> f32 {
     unsafe {
         if let Some(ref mut engine) = ENGINE_INSTANCE {
             engine.spatial.get_layer_y(id)
@@ -338,8 +329,8 @@ pub extern "C" fn vortex_get_layer_y(id: u16) -> f32 {
     }
 }
 
-#[no_mangle]
-pub extern "C" fn vortex_get_layer_scale(id: u16) -> f32 {
+#[wasm_bindgen]
+pub fn vortex_get_layer_scale(id: u16) -> f32 {
     unsafe {
         if let Some(ref mut engine) = ENGINE_INSTANCE {
             engine.spatial.get_layer_scale(id)
@@ -349,8 +340,8 @@ pub extern "C" fn vortex_get_layer_scale(id: u16) -> f32 {
     }
 }
 
-#[no_mangle]
-pub extern "C" fn vortex_get_layer_rotation(id: u16) -> f32 {
+#[wasm_bindgen]
+pub fn vortex_get_layer_rotation(id: u16) -> f32 {
     unsafe {
         if let Some(ref mut engine) = ENGINE_INSTANCE {
             engine.spatial.get_layer_rotation(id)
@@ -360,8 +351,8 @@ pub extern "C" fn vortex_get_layer_rotation(id: u16) -> f32 {
     }
 }
 
-#[no_mangle]
-pub extern "C" fn vortex_scale_update(delta: f32) {
+#[wasm_bindgen]
+pub fn vortex_scale_update(delta: f32) {
     unsafe {
         if let Some(ref mut engine) = ENGINE_INSTANCE {
             engine.spatial.scale_update(delta);
@@ -369,8 +360,8 @@ pub extern "C" fn vortex_scale_update(delta: f32) {
     }
 }
 
-#[no_mangle]
-pub extern "C" fn vortex_rotate_update(delta: f32) {
+#[wasm_bindgen]
+pub fn vortex_rotate_update(delta: f32) {
     unsafe {
         if let Some(ref mut engine) = ENGINE_INSTANCE {
             engine.spatial.rotate_update(delta);
@@ -385,8 +376,8 @@ pub extern "C" fn vortex_rotate_update(delta: f32) {
 /// # Safety
 ///
 /// Esta función desreferencia `json_ptr` asumiendo un string UTF-8 válido.
-#[no_mangle]
-pub unsafe extern "C" fn vortex_hydrate_state(json_ptr: *const u8, len: usize) -> bool {
+#[wasm_bindgen]
+pub unsafe fn vortex_hydrate_state(json_ptr: *const u8, len: usize) -> bool {
     if let Some(ref mut engine) = ENGINE_INSTANCE {
         let slice = std::slice::from_raw_parts(json_ptr, len);
         if let Ok(json_str) = std::str::from_utf8(slice) {
@@ -396,28 +387,16 @@ pub unsafe extern "C" fn vortex_hydrate_state(json_ptr: *const u8, len: usize) -
     false
 }
 
-// Como devolver un string JSON desde FFI es tedioso de allocar cada ciclo,
-// se expone un puntero estático de lectura que es seguro (read-only)
-// en un modelo mono-hilo interactivo. JS usará un String Decoder.
-///
-/// # Safety
-///
-/// Devuelve un puntero a la memoria interna del estado JSON. El llamador no debe liberar esta memoria.
-#[no_mangle]
-pub unsafe extern "C" fn vortex_get_state() -> *const u8 {
+#[wasm_bindgen]
+pub unsafe fn vortex_get_state() -> *const u8 {
     if let Some(ref mut engine) = ENGINE_INSTANCE {
         return engine.state_machine.get_json();
     }
     std::ptr::null()
 }
 
-/// Obtiene un valor interpolado desde el motor de animación de Rust
-///
-/// # Safety
-///
-/// Desreferencia `layer_id_ptr` y `prop_ptr` como strings UTF-8.
-#[no_mangle]
-pub unsafe extern "C" fn vortex_get_interpolated_value(
+#[wasm_bindgen]
+pub unsafe fn vortex_get_interpolated_value(
     layer_id_ptr: *const u8, layer_id_len: usize,
     prop_ptr: *const u8, prop_len: usize,
     time: f32, default_val: f32
@@ -435,13 +414,8 @@ pub unsafe extern "C" fn vortex_get_interpolated_value(
     }
 }
 
-/// Obtiene un color Hex interpolado desde Rust
-///
-/// # Safety
-///
-/// Desreferencia punteros de string UTF-8.
-#[no_mangle]
-pub unsafe extern "C" fn vortex_get_interpolated_color(
+#[wasm_bindgen]
+pub unsafe fn vortex_get_interpolated_color(
     layer_id_ptr: *const u8, layer_id_len: usize,
     prop_ptr: *const u8, prop_len: usize,
     time: f32, default_hex_ptr: *const u8, default_hex_len: usize
